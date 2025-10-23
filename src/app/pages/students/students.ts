@@ -20,13 +20,23 @@ import { LmsAuthService } from '../../services/lms-auth.service';
             <h2>Students Management</h2>
 
             <div class="toolbar">
-                <button pButton pRipple label="Add New Student" icon="pi pi-plus" class="p-button-success mr-2" (click)="openAddDialog()"></button>
-                <button pButton pRipple label="Import Excel" icon="pi pi-upload" class="p-button-info mr-2" (click)="fileInput.click()"></button>
-                <button pButton pRipple label="Refresh" icon="pi pi-refresh" (click)="loadStudents()"></button>
-                <input #fileInput type="file" hidden accept=".xlsx,.xls,.csv" (change)="onFileSelected($event)" />
+                <div class="toolbar-left">
+                    <button pButton pRipple label="Add New Student" icon="pi pi-plus" class="p-button-success mr-2" (click)="openAddDialog()"></button>
+                    <button pButton pRipple label="Import Excel" icon="pi pi-upload" class="p-button-info mr-2" (click)="fileInput.click()"></button>
+                    <button pButton pRipple label="Refresh" icon="pi pi-refresh" (click)="loadStudents()"></button>
+                    <input #fileInput type="file" hidden accept=".xlsx,.xls,.csv" (change)="onFileSelected($event)" />
+                </div>
+
+                <div class="toolbar-right">
+                    <span class="p-input-icon-left">
+                        <i class="pi pi-search"></i>
+                        <input pInputText type="text" [(ngModel)]="searchValue" (ngModelChange)="onSearchChange()" placeholder="Search by LRN, Name, or Email..." class="w-full" />
+                    </span>
+                    <button pButton pRipple icon="pi pi-times" class="p-button-rounded p-button-text" (click)="clearSearch()" [disabled]="!searchValue" title="Clear search"></button>
+                </div>
             </div>
 
-            <p-table [value]="students" responsiveLayout="scroll" [paginator]="true" [rows]="10" [globalFilterFields]="['lrn', 'name', 'email']" [scrollable]="true" scrollHeight="flex">
+            <p-table [value]="filteredStudents" responsiveLayout="scroll" [paginator]="true" [rows]="10" [globalFilterFields]="['lrn', 'name', 'email']" [scrollable]="true" scrollHeight="flex">
                 <ng-template pTemplate="header">
                     <tr>
                         <th pSortableColumn="lrn" style="width: 100px">LRN <p-sortIcon field="lrn"></p-sortIcon></th>
@@ -111,8 +121,24 @@ import { LmsAuthService } from '../../services/lms-auth.service';
                 .toolbar {
                     margin-bottom: 1rem;
                     display: flex;
+                    gap: 1rem;
+                    flex-wrap: wrap;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+
+                .toolbar-left {
+                    display: flex;
                     gap: 0.5rem;
                     flex-wrap: wrap;
+                    align-items: center;
+                }
+
+                .toolbar-right {
+                    display: flex;
+                    gap: 0.5rem;
+                    align-items: center;
+                    min-width: 300px;
                 }
 
                 .card {
@@ -174,6 +200,63 @@ import { LmsAuthService } from '../../services/lms-auth.service';
                 .mr-2 {
                     margin-right: 0.5rem;
                 }
+
+                .p-input-icon-left {
+                    display: flex;
+                    align-items: center;
+                    width: 100%;
+                    position: relative;
+                    flex: 1;
+                    min-width: 250px;
+                }
+
+                .p-input-icon-left > i {
+                    position: absolute;
+                    left: 0.75rem;
+                    color: #999;
+                    pointer-events: none;
+                    z-index: 1;
+                }
+
+                .p-input-icon-left input {
+                    padding-left: 2.5rem !important;
+                    width: 100%;
+                }
+
+                .w-full {
+                    width: 100%;
+                }
+
+                .search-section {
+                    margin-bottom: 1.5rem;
+                    display: flex;
+                    gap: 0.5rem;
+                    align-items: center;
+                }
+
+                .p-input-icon-left {
+                    display: flex;
+                    align-items: center;
+                    width: 100%;
+                    max-width: 400px;
+                    position: relative;
+                }
+
+                .p-input-icon-left > i {
+                    position: absolute;
+                    left: 0.75rem;
+                    color: #999;
+                    pointer-events: none;
+                }
+
+                .p-input-icon-left input {
+                    padding-left: 2.5rem !important;
+                    width: 100%;
+                }
+
+                .w-full {
+                    width: 100%;
+                }
             }
         `
     ]
@@ -184,6 +267,8 @@ export class Students implements OnInit {
     private authService = inject(LmsAuthService);
 
     students: Student[] = [];
+    filteredStudents: Student[] = [];
+    searchValue: string = '';
     displayDialog = false;
     saving = false;
     isEditMode = false;
@@ -212,9 +297,39 @@ export class Students implements OnInit {
     async loadStudents() {
         try {
             this.students = await this.studentService.getStudents();
+            this.filterStudents();
         } catch (error) {
             this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to load students' });
         }
+    }
+
+    onSearchChange() {
+        this.filterStudents();
+    }
+
+    filterStudents() {
+        if (!this.searchValue || this.searchValue.trim() === '') {
+            this.filteredStudents = [...this.students];
+        } else {
+            const searchTerm = this.searchValue.toLowerCase().trim();
+            this.filteredStudents = this.students.filter((student) => {
+                return (
+                    student.lrn?.toLowerCase().includes(searchTerm) ||
+                    student.name?.toLowerCase().includes(searchTerm) ||
+                    student.email?.toLowerCase().includes(searchTerm) ||
+                    student.grade?.toLowerCase().includes(searchTerm) ||
+                    student.section?.toLowerCase().includes(searchTerm) ||
+                    student.barangay?.toLowerCase().includes(searchTerm) ||
+                    student.municipality?.toLowerCase().includes(searchTerm) ||
+                    student.contactNumber?.toLowerCase().includes(searchTerm)
+                );
+            });
+        }
+    }
+
+    clearSearch() {
+        this.searchValue = '';
+        this.filterStudents();
     }
 
     openAddDialog() {
