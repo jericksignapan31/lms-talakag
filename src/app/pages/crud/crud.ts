@@ -161,6 +161,10 @@ interface ExportColumn {
                         Year
                         <p-sortIcon field="year" />
                     </th>
+                    <th pSortableColumn="remarks" style="min-width: 14rem">
+                        Remarks
+                        <p-sortIcon field="remarks" />
+                    </th>
                     <th pSortableColumn="isbn" style="min-width: 12rem">
                         ISBN
                         <p-sortIcon field="isbn" />
@@ -185,6 +189,7 @@ interface ExportColumn {
                     <td style="min-width: 8rem">{{ book.price | currency: 'PHP' }}</td>
                     <td style="min-width: 12rem">{{ book.publisher }}</td>
                     <td style="min-width: 8rem">{{ book.year }}</td>
+                    <td style="min-width: 14rem">{{ book.remarks }}</td>
                     <td style="min-width: 12rem">{{ book.isbn }}</td>
                     <td>
                         <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true" (click)="editBook(book)" />
@@ -369,6 +374,7 @@ export class Crud implements OnInit {
             { field: 'price', header: 'Price' },
             { field: 'publisher', header: 'Publisher' },
             { field: 'year', header: 'Year' },
+            { field: 'remarks', header: 'Remarks' },
             { field: 'isbn', header: 'ISBN' }
         ];
 
@@ -497,115 +503,158 @@ export class Crud implements OnInit {
         }
     }
 
-    handleFileInput(event: any) {
-        const files = event.target.files;
+    async handleFileInput(event: Event) {
+        const input = event.target as HTMLInputElement | null;
+        const files = input?.files;
         if (files && files.length > 0) {
             const file = files[0];
-            if (file.name.endsWith('.xls') || file.name.endsWith('.xlsx')) {
-                this.parseXLS(file);
+            const extension = file.name.split('.').pop()?.toLowerCase();
+
+            if (extension && ['xls', 'xlsx', 'csv'].includes(extension)) {
+                await this.parseXLS(file);
             } else {
                 this.messageService.add({
                     severity: 'warn',
                     summary: 'Warning',
-                    detail: 'Only XLS and XLSX files are supported.'
+                    detail: 'Only XLS, XLSX, or CSV files are supported.'
                 });
             }
-            event.target.value = '';
+
+            if (input) {
+                input.value = '';
+            }
         }
     }
 
-    parseXLS(file: File) {
-        const reader = new FileReader();
-        reader.onload = (e: any) => {
-            try {
-                const data = e.target.result;
-                // Split by newlines and filter empty rows
-                const rows = data
-                    .split('\n')
-                    .map((row: string) => row.trim())
-                    .filter((row: string) => row.length > 0);
+    private async parseXLS(file: File) {
+        try {
+            const XLSX = await import('xlsx'); // Lazy-load to keep bundle lean when import is unused.
+            const data = await file.arrayBuffer();
+            const workbook = XLSX.read(data, { type: 'array' });
 
-                if (rows.length < 2) {
-                    this.messageService.add({
-                        severity: 'warn',
-                        summary: 'Warning',
-                        detail: 'File must have headers and at least one data row'
-                    });
-                    return;
+            if (!workbook.SheetNames.length) {
+                this.messageService.add({
+                    severity: 'warn',
+                    summary: 'Warning',
+                    detail: 'The spreadsheet does not contain any sheets.'
+                });
+                return;
+            }
+
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            if (!worksheet) {
+                this.messageService.add({
+                    severity: 'warn',
+                    summary: 'Warning',
+                    detail: 'Unable to read the first sheet of the spreadsheet.'
+                });
+                return;
+            }
+
+            const rows = (
+                XLSX.utils.sheet_to_json(worksheet, {
+                    header: 1,
+                    raw: false,
+                    defval: ''
+                }) as (string | number)[][]
+            ).map((row) => row.map((cell) => String(cell).trim()));
+
+            if (rows.length < 2) {
+                this.messageService.add({
+                    severity: 'warn',
+                    summary: 'Warning',
+                    detail: 'File must have headers and at least one data row'
+                });
+                return;
+            }
+
+            const headers = rows[0].map((header) => header.toLowerCase());
+            const headerIndex = headers.reduce<Record<string, number>>((acc, header, index) => {
+                if (header) {
+                    acc[header] = index;
                 }
+                return acc;
+            }, {});
 
-                // Parse headers - handle both TSV and CSV
-                const delimiter = rows[0].includes('\t') ? '\t' : ',';
-                const headers = rows[0].split(delimiter).map((h: string) => h.trim().toLowerCase());
-
-                // Validate required columns
-                const requiredCols = ['accession number', 'title'];
-                const missingCols = requiredCols.filter((col) => !headers.includes(col));
-                if (missingCols.length > 0) {
-                    this.messageService.add({
-                        severity: 'error',
-                        summary: 'Error',
-                        detail: `Missing required columns: ${missingCols.join(', ')}`
-                    });
-                    return;
-                }
-
-                const importedBooks: Book[] = [];
-                let id = this.books().length > 0 ? Math.max(...this.books().map((b) => parseInt(b.id) || 0)) + 1 : 1;
-
-                for (let i = 1; i < rows.length; i++) {
-                    const values = rows[i].split(delimiter).map((v: string) => v.trim().replace(/"/g, ''));
-
-                    if (values.length > 0 && values[0]) {
-                        const book: Book = {
-                            id: id.toString(),
-                            accessionNumber: values[headers.indexOf('accession number')] || '',
-                            dateInput: values[headers.indexOf('date input')] || new Date().toISOString().split('T')[0],
-                            callNumber: values[headers.indexOf('call number')] || '',
-                            author: values[headers.indexOf('author (last, first)')] || '',
-                            title: values[headers.indexOf('title')] || '',
-                            edition: values[headers.indexOf('edition')] || '',
-                            volumeNumber: values[headers.indexOf('volume number')] || '',
-                            pages: values[headers.indexOf('pages')] || '',
-                            sourceOfFund: values[headers.indexOf('source of fund (donation/purchase)')] || '',
-                            price: parseFloat(values[headers.indexOf('price')]) || 0,
-                            publisher: values[headers.indexOf('publisher')] || '',
-                            year: values[headers.indexOf('year')] || '',
-                            remarks: values[headers.indexOf('remarks')] || '',
-                            isbn: values[headers.indexOf('isbn')] || ''
-                        };
-
-                        // Only add if accessionNumber and title are not empty
-                        if (book.accessionNumber.trim() && book.title.trim()) {
-                            importedBooks.push(book);
-                            id++;
-                        }
-                    }
-                }
-
-                if (importedBooks.length > 0) {
-                    this.books.set([...this.books(), ...importedBooks]);
-                    this.messageService.add({
-                        severity: 'success',
-                        summary: 'Success',
-                        detail: `Successfully imported ${importedBooks.length} books from ${file.name}`
-                    });
-                } else {
-                    this.messageService.add({
-                        severity: 'warn',
-                        summary: 'Warning',
-                        detail: 'No valid book records found in file'
-                    });
-                }
-            } catch (error) {
-                console.error('XLS Parse Error:', error);
+            const requiredCols = ['accession number', 'title'];
+            const missingCols = requiredCols.filter((col) => headerIndex[col] === undefined);
+            if (missingCols.length > 0) {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Error',
-                    detail: `Failed to parse XLS file: ${error instanceof Error ? error.message : 'Unknown error'}`
+                    detail: `Missing required columns: ${missingCols.join(', ')}`
+                });
+                return;
+            }
+
+            const importedBooks: Book[] = [];
+            let id = this.books().length > 0 ? Math.max(...this.books().map((b) => parseInt(b.id) || 0)) + 1 : 1;
+
+            const getValue = (row: (string | number)[], key: string): string => {
+                const index = headerIndex[key];
+                return index === undefined ? '' : String(row[index] ?? '').trim();
+            };
+
+            for (let i = 1; i < rows.length; i++) {
+                const values = rows[i];
+                if (!values || values.every((value) => !String(value).trim())) {
+                    continue;
+                }
+
+                const accessionNumber = getValue(values, 'accession number');
+                const title = getValue(values, 'title');
+
+                if (!accessionNumber || !title) {
+                    continue;
+                }
+
+                const priceValue = getValue(values, 'price').replace(/[^0-9.,-]/g, '');
+                const normalizedPrice = priceValue.replace(/,/g, '');
+                const price = normalizedPrice ? parseFloat(normalizedPrice) || 0 : 0;
+
+                const book: Book = {
+                    id: id.toString(),
+                    accessionNumber,
+                    dateInput: getValue(values, 'date input') || new Date().toISOString().split('T')[0],
+                    callNumber: getValue(values, 'call number'),
+                    author: getValue(values, 'author (last, first)') || getValue(values, 'author'),
+                    title,
+                    edition: getValue(values, 'edition'),
+                    volumeNumber: getValue(values, 'volume number'),
+                    pages: getValue(values, 'pages'),
+                    sourceOfFund: getValue(values, 'source of fund (donation/purchase)') || getValue(values, 'source of fund'),
+                    price,
+                    publisher: getValue(values, 'publisher'),
+                    year: getValue(values, 'year'),
+                    remarks: getValue(values, 'remarks'),
+                    isbn: getValue(values, 'isbn')
+                };
+
+                importedBooks.push(book);
+                id++;
+            }
+
+            if (importedBooks.length > 0) {
+                this.books.set([...this.books(), ...importedBooks]);
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: `Successfully imported ${importedBooks.length} books from ${file.name}`
+                });
+            } else {
+                this.messageService.add({
+                    severity: 'warn',
+                    summary: 'Warning',
+                    detail: 'No valid book records found in file'
                 });
             }
-        };
-        reader.readAsText(file);
+        } catch (error) {
+            console.error('XLS Parse Error:', error);
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: `Failed to parse spreadsheet: ${error instanceof Error ? error.message : 'Unknown error'}`
+            });
+        }
     }
 }
