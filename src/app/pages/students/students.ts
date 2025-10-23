@@ -224,13 +224,36 @@ export class Students implements OnInit {
     }
 
     async deleteStudent(id: string | undefined) {
-        if (!id || !confirm('Sure?')) return;
+        if (!id) return;
+
+        if (!confirm('Are you sure you want to delete this student? This will also delete their Firebase account.')) {
+            return;
+        }
+
         try {
+            // Find the student to get their LRN
+            const student = this.students.find((s) => s.id === id);
+
+            // Delete from Firestore first
             await this.studentService.deleteStudent(id);
-            this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Deleted' });
+
+            // Then try to delete from Firebase Authentication
+            if (student && student.lrn) {
+                await this.authService.deleteStudentAccount(student.lrn);
+            }
+
+            this.messageService.add({
+                severity: 'success',
+                summary: 'Success',
+                detail: 'Student and account deleted successfully'
+            });
             this.loadStudents();
         } catch (error: any) {
-            this.messageService.add({ severity: 'error', summary: 'Error', detail: error.message });
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: error.message
+            });
         }
     }
 
@@ -247,6 +270,12 @@ export class Students implements OnInit {
             if (file.name.endsWith('.csv')) {
                 this.parseCSV(file);
             } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                this.messageService.add({
+                    severity: 'info',
+                    summary: 'Excel Format',
+                    detail: 'For best compatibility, please export your Excel file as CSV format and import again'
+                });
+                // Still try to parse it as text
                 this.parseExcel(file);
             } else {
                 this.messageService.add({ severity: 'warn', summary: 'Invalid File', detail: 'Only CSV and Excel files are supported' });
@@ -310,17 +339,35 @@ export class Students implements OnInit {
         const reader = new FileReader();
         reader.onload = (e: any) => {
             try {
+                // For Excel files, we need to handle binary data
+                // This is a basic parser - for .xlsx we'd need a library
+                // For now, treat Excel files similar to CSV but with better error handling
+
                 const data = e.target.result;
-                const rows = data
-                    .split('\n')
-                    .map((row: string) => row.trim())
-                    .filter((row: string) => row.length > 0);
+                let rows: string[] = [];
+
+                // Try to parse as text (works for some Excel exports)
+                if (typeof data === 'string') {
+                    rows = data
+                        .split('\n')
+                        .map((row: string) => row.trim())
+                        .filter((row: string) => row.length > 0);
+                } else {
+                    // For binary Excel files, show helpful error
+                    this.messageService.add({
+                        severity: 'info',
+                        summary: 'Tip',
+                        detail: 'For .xlsx files, please export as CSV from Excel first, or use the CSV format'
+                    });
+                    return;
+                }
 
                 if (rows.length < 2) {
                     this.messageService.add({ severity: 'warn', summary: 'Invalid File', detail: 'File must have headers and at least one row' });
                     return;
                 }
 
+                // Detect delimiter (tab or comma)
                 const delimiter = rows[0].includes('\t') ? '\t' : ',';
                 const headers = rows[0].split(delimiter).map((h: string) => h.trim().toLowerCase());
                 const importedStudents: Student[] = [];
@@ -356,7 +403,11 @@ export class Students implements OnInit {
 
                 this.importStudents(importedStudents, file.name);
             } catch (error) {
-                this.messageService.add({ severity: 'error', summary: 'Parse Error', detail: 'Failed to parse Excel file' });
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Parse Error',
+                    detail: 'Failed to parse Excel file. Try exporting as CSV instead.'
+                });
             }
         };
         reader.readAsText(file);

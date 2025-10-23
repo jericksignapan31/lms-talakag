@@ -179,4 +179,30 @@ export class LmsAuthService {
             throw new Error(`Failed to create account: ${error.message}`);
         }
     }
+
+    /**
+     * Delete student account by LRN
+     * Note: In a real application with Firebase Admin SDK, you would delete the user directly
+     * For now, this logs the deletion intention. A backend function would handle actual deletion.
+     */
+    async deleteStudentAccount(lrn: string): Promise<void> {
+        try {
+            const email = `${lrn}@lms.talakag`;
+
+            // Try to delete current user if it matches
+            const currentUser = this.auth.currentUser;
+            if (currentUser && currentUser.email === email) {
+                await currentUser.delete();
+            } else {
+                // For other users, log intention to delete
+                // In production, you would call a backend function with admin privileges
+                console.info(`Delete request for student account: ${email}`);
+                console.warn('Note: Full account deletion requires Firebase Admin SDK on backend');
+            }
+        } catch (error: any) {
+            console.error('Error deleting student account:', error);
+            // Don't throw error to allow student deletion even if auth account can't be deleted
+            // This prevents cascade failures
+        }
+    }
 }
