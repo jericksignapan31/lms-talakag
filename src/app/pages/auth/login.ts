@@ -1,17 +1,19 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { RippleModule } from 'primeng/ripple';
 import { AppFloatingConfigurator } from '../../layout/component/app.floatingconfigurator';
+import { AuthService } from './auth.service';
 
 @Component({
     selector: 'app-login',
     standalone: true,
-    imports: [ButtonModule, CheckboxModule, InputTextModule, PasswordModule, FormsModule, RouterModule, RippleModule, AppFloatingConfigurator],
+    imports: [CommonModule, ButtonModule, CheckboxModule, InputTextModule, PasswordModule, FormsModule, RouterModule, RippleModule, AppFloatingConfigurator],
     template: `
         <app-floating-configurator />
         <div class="bg-surface-50 dark:bg-surface-950 flex items-center justify-center min-h-screen min-w-screen overflow-hidden">
@@ -41,11 +43,11 @@ import { AppFloatingConfigurator } from '../../layout/component/app.floatingconf
                         </div>
 
                         <div>
-                            <label for="email1" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">Email</label>
-                            <input pInputText id="email1" type="text" placeholder="Email address" class="w-full md:w-120 mb-8" [(ngModel)]="email" />
+                            <label for="email1" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">Username</label>
+                            <input pInputText id="email1" type="text" placeholder="Username" class="w-full md:w-120 mb-8" [(ngModel)]="username" required />
 
                             <label for="password1" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Password</label>
-                            <p-password id="password1" [(ngModel)]="password" placeholder="Password" [toggleMask]="true" styleClass="mb-4" [fluid]="true" [feedback]="false"></p-password>
+                            <p-password id="password1" [(ngModel)]="password" placeholder="Password" [toggleMask]="true" styleClass="mb-4" [fluid]="true" [feedback]="false" [required]="true"></p-password>
 
                             <div class="flex items-center justify-between mt-2 mb-8 gap-8">
                                 <div class="flex items-center">
@@ -54,7 +56,8 @@ import { AppFloatingConfigurator } from '../../layout/component/app.floatingconf
                                 </div>
                                 <span class="font-medium no-underline ml-2 text-right cursor-pointer text-primary">Forgot password?</span>
                             </div>
-                            <p-button label="Sign In" styleClass="w-full" routerLink="/"></p-button>
+                            <p-button label="Sign In" styleClass="w-full" [loading]="loading" [disabled]="!canSubmit || loading" (onClick)="onSubmit()"></p-button>
+                            <div *ngIf="error" class="text-red-500 mt-3">{{ error }}</div>
                         </div>
                     </div>
                 </div>
@@ -63,9 +66,45 @@ import { AppFloatingConfigurator } from '../../layout/component/app.floatingconf
     `
 })
 export class Login {
-    email: string = '';
+    private auth = inject(AuthService);
+    private router = inject(Router);
+    private route = inject(ActivatedRoute);
+
+    username: string = '';
 
     password: string = '';
 
     checked: boolean = false;
+
+    loading = false;
+    error: string | null = null;
+
+    get canSubmit() {
+        return this.username?.trim()?.length > 0 && this.password?.trim()?.length > 0;
+    }
+
+    onSubmit() {
+        this.error = null;
+        this.loading = true;
+        if (!this.canSubmit) {
+            this.loading = false;
+            this.error = 'Please enter username and password.';
+            return;
+        }
+        this.auth.login(this.username, this.password).subscribe({
+            next: (ok) => {
+                this.loading = false;
+                if (ok) {
+                    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+                    this.router.navigate([returnUrl || '/dashboard']);
+                } else {
+                    this.error = 'Invalid credentials';
+                }
+            },
+            error: () => {
+                this.loading = false;
+                this.error = 'Unable to sign in. Please try again.';
+            }
+        });
+    }
 }
