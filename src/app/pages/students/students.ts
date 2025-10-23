@@ -114,19 +114,19 @@ import { LmsAuthService } from '../../services/lms-auth.service';
                     gap: 0.5rem;
                     flex-wrap: wrap;
                 }
-                
+
                 .card {
                     padding: 1.5rem;
                 }
-                
+
                 p-table {
                     width: 100%;
                 }
-                
+
                 .p-datatable {
                     font-size: 0.875rem;
                 }
-                
+
                 .p-datatable th {
                     padding: 0.75rem 0.5rem !important;
                     font-weight: 600;
@@ -134,43 +134,43 @@ import { LmsAuthService } from '../../services/lms-auth.service';
                     word-wrap: break-word;
                     max-width: 150px;
                 }
-                
+
                 .p-datatable td {
                     padding: 0.5rem !important;
                     overflow: hidden;
                     text-overflow: ellipsis;
                     white-space: nowrap;
                 }
-                
+
                 .p-datatable-scrollable-body {
                     overflow-x: auto;
                     overflow-y: auto;
                 }
-                
+
                 .form {
                     display: grid;
                     grid-template-columns: 1fr 1fr;
                     gap: 1rem;
                     padding: 1rem 0;
                 }
-                
+
                 .form div {
                     display: flex;
                     flex-direction: column;
                     gap: 0.5rem;
                 }
-                
+
                 .form label {
                     font-weight: 600;
                 }
-                
+
                 .form input,
                 .form select {
                     padding: 0.5rem;
                     border: 1px solid #ddd;
                     border-radius: 4px;
                 }
-                
+
                 .mr-2 {
                     margin-right: 0.5rem;
                 }
