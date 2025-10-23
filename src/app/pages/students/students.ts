@@ -26,40 +26,40 @@ import { LmsAuthService } from '../../services/lms-auth.service';
                 <input #fileInput type="file" hidden accept=".xlsx,.xls,.csv" (change)="onFileSelected($event)" />
             </div>
 
-            <p-table [value]="students" responsiveLayout="scroll" [paginator]="true" [rows]="10" [globalFilterFields]="['lrn', 'name', 'email']">
+            <p-table [value]="students" responsiveLayout="scroll" [paginator]="true" [rows]="10" [globalFilterFields]="['lrn', 'name', 'email']" [scrollable]="true" scrollHeight="flex">
                 <ng-template pTemplate="header">
                     <tr>
-                        <th pSortableColumn="lrn">LRN <p-sortIcon field="lrn"></p-sortIcon></th>
-                        <th pSortableColumn="name">Name <p-sortIcon field="name"></p-sortIcon></th>
-                        <th pSortableColumn="grade">Grade <p-sortIcon field="grade"></p-sortIcon></th>
-                        <th pSortableColumn="section">Section <p-sortIcon field="section"></p-sortIcon></th>
-                        <th pSortableColumn="sex">Sex <p-sortIcon field="sex"></p-sortIcon></th>
-                        <th pSortableColumn="birthDate">Birth Date <p-sortIcon field="birthDate"></p-sortIcon></th>
-                        <th pSortableColumn="address">Address <p-sortIcon field="address"></p-sortIcon></th>
-                        <th pSortableColumn="barangay">Barangay <p-sortIcon field="barangay"></p-sortIcon></th>
-                        <th pSortableColumn="municipality">Municipality <p-sortIcon field="municipality"></p-sortIcon></th>
-                        <th pSortableColumn="province">Province <p-sortIcon field="province"></p-sortIcon></th>
-                        <th pSortableColumn="contactNumber">Contact Number <p-sortIcon field="contactNumber"></p-sortIcon></th>
-                        <th pSortableColumn="learningModality">Learning Modality <p-sortIcon field="learningModality"></p-sortIcon></th>
-                        <th>Actions</th>
+                        <th pSortableColumn="lrn" style="width: 100px">LRN <p-sortIcon field="lrn"></p-sortIcon></th>
+                        <th pSortableColumn="name" style="width: 120px">Name <p-sortIcon field="name"></p-sortIcon></th>
+                        <th pSortableColumn="grade" style="width: 90px">Grade <p-sortIcon field="grade"></p-sortIcon></th>
+                        <th pSortableColumn="section" style="width: 80px">Section <p-sortIcon field="section"></p-sortIcon></th>
+                        <th pSortableColumn="sex" style="width: 70px">Sex <p-sortIcon field="sex"></p-sortIcon></th>
+                        <th pSortableColumn="birthDate" style="width: 110px">Birth Date <p-sortIcon field="birthDate"></p-sortIcon></th>
+                        <th pSortableColumn="address" style="width: 120px">Address <p-sortIcon field="address"></p-sortIcon></th>
+                        <th pSortableColumn="barangay" style="width: 100px">Barangay <p-sortIcon field="barangay"></p-sortIcon></th>
+                        <th pSortableColumn="municipality" style="width: 110px">Municipality <p-sortIcon field="municipality"></p-sortIcon></th>
+                        <th pSortableColumn="province" style="width: 100px">Province <p-sortIcon field="province"></p-sortIcon></th>
+                        <th pSortableColumn="contactNumber" style="width: 120px">Contact Number <p-sortIcon field="contactNumber"></p-sortIcon></th>
+                        <th pSortableColumn="learningModality" style="width: 130px">Learning Modality <p-sortIcon field="learningModality"></p-sortIcon></th>
+                        <th style="width: 80px">Actions</th>
                     </tr>
                 </ng-template>
 
                 <ng-template pTemplate="body" let-student>
                     <tr>
-                        <td>{{ student.lrn }}</td>
-                        <td>{{ student.name }}</td>
-                        <td>{{ student.grade }}</td>
-                        <td>{{ student.section }}</td>
-                        <td>{{ student.sex }}</td>
-                        <td>{{ student.birthDate }}</td>
-                        <td>{{ student.address }}</td>
-                        <td>{{ student.barangay }}</td>
-                        <td>{{ student.municipality }}</td>
-                        <td>{{ student.province }}</td>
-                        <td>{{ student.contactNumber }}</td>
-                        <td>{{ student.learningModality }}</td>
-                        <td>
+                        <td style="width: 100px">{{ student.lrn }}</td>
+                        <td style="width: 120px">{{ student.name }}</td>
+                        <td style="width: 90px">{{ student.grade }}</td>
+                        <td style="width: 80px">{{ student.section }}</td>
+                        <td style="width: 70px">{{ student.sex }}</td>
+                        <td style="width: 110px">{{ student.birthDate }}</td>
+                        <td style="width: 120px">{{ student.address }}</td>
+                        <td style="width: 100px">{{ student.barangay }}</td>
+                        <td style="width: 110px">{{ student.municipality }}</td>
+                        <td style="width: 100px">{{ student.province }}</td>
+                        <td style="width: 120px">{{ student.contactNumber }}</td>
+                        <td style="width: 130px">{{ student.learningModality }}</td>
+                        <td style="width: 80px">
                             <button pButton pRipple type="button" icon="pi pi-pencil" class="p-button-rounded p-button-info mr-2" (click)="openEditDialog(student)" title="Edit"></button>
                             <button pButton pRipple type="button" icon="pi pi-trash" class="p-button-rounded p-button-danger" (click)="deleteStudent(student.id)" title="Delete"></button>
                         </td>
@@ -112,27 +112,65 @@ import { LmsAuthService } from '../../services/lms-auth.service';
                     margin-bottom: 1rem;
                     display: flex;
                     gap: 0.5rem;
+                    flex-wrap: wrap;
                 }
+                
+                .card {
+                    padding: 1.5rem;
+                }
+                
+                p-table {
+                    width: 100%;
+                }
+                
+                .p-datatable {
+                    font-size: 0.875rem;
+                }
+                
+                .p-datatable th {
+                    padding: 0.75rem 0.5rem !important;
+                    font-weight: 600;
+                    white-space: normal;
+                    word-wrap: break-word;
+                    max-width: 150px;
+                }
+                
+                .p-datatable td {
+                    padding: 0.5rem !important;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                
+                .p-datatable-scrollable-body {
+                    overflow-x: auto;
+                    overflow-y: auto;
+                }
+                
                 .form {
                     display: grid;
                     grid-template-columns: 1fr 1fr;
                     gap: 1rem;
                     padding: 1rem 0;
                 }
+                
                 .form div {
                     display: flex;
                     flex-direction: column;
                     gap: 0.5rem;
                 }
+                
                 .form label {
                     font-weight: 600;
                 }
+                
                 .form input,
                 .form select {
                     padding: 0.5rem;
                     border: 1px solid #ddd;
                     border-radius: 4px;
                 }
+                
                 .mr-2 {
                     margin-right: 0.5rem;
                 }
