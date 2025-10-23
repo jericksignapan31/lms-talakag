@@ -9,7 +9,32 @@
     { "id": 2, "code": "SCI201", "title": "General Science", "teacherId": 2 }
   ],
   "students": [
-    { "id": 1, "userId": 3, "lrn": "1234567890", "gradeLevel": "Grade 7" }
+    { 
+      "id": 1, 
+      "lrn": "1234567890", 
+      "name": "Juan Santos",
+      "sex": "Male",
+      "birthDate": "2008-05-15",
+      "address": "123 Main Street",
+      "barangay": "Tagumpay",
+      "municipality": "Talakag",
+      "province": "Bukidnon",
+      "contactNumber": "09123456789",
+      "learningModality": "Face-to-Face"
+    },
+    { 
+      "id": 2, 
+      "lrn": "1234567891", 
+      "name": "Maria Cruz",
+      "sex": "Female",
+      "birthDate": "2008-08-20",
+      "address": "456 Oak Avenue",
+      "barangay": "Sumasama",
+      "municipality": "Talakag",
+      "province": "Bukidnon",
+      "contactNumber": "09234567890",
+      "learningModality": "Online"
+    }
   ],
   "enrollments": [
     { "id": 1, "studentId": 1, "courseId": 1 },

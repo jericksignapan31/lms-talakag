@@ -10,8 +10,12 @@ import { AppMenuitem } from './app.menuitem';
     imports: [CommonModule, AppMenuitem, RouterModule],
     template: `<ul class="layout-menu">
         <ng-container *ngFor="let item of model; let i = index">
-            <li app-menuitem *ngIf="!item.separator" [item]="item" [index]="i" [root]="true"></li>
-            <li *ngIf="item.separator" class="menu-separator"></li>
+            @if (!item.separator) {
+                <li app-menuitem [item]="item" [index]="i" [root]="true"></li>
+            }
+            @if (item.separator) {
+                <li class="menu-separator"></li>
+            }
         </ng-container>
     </ul> `
 })
@@ -22,7 +26,7 @@ export class AppMenu {
         this.model = [
             {
                 label: 'Home',
-                items: [{ label: 'Dashboard', icon: 'pi pi-fw pi-home', routerLink: ['/'] }]
+                items: [{ label: 'Dashboard', icon: 'pi pi-fw pi-home', routerLink: [] }]
             },
 
             {
@@ -30,27 +34,6 @@ export class AppMenu {
                 icon: 'pi pi-fw pi-briefcase',
                 routerLink: ['/pages'],
                 items: [
-                    {
-                        label: 'Auth',
-                        icon: 'pi pi-fw pi-user',
-                        items: [
-                            {
-                                label: 'Login',
-                                icon: 'pi pi-fw pi-sign-in',
-                                routerLink: ['/auth/login']
-                            },
-                            {
-                                label: 'Error',
-                                icon: 'pi pi-fw pi-times-circle',
-                                routerLink: ['/auth/error']
-                            },
-                            {
-                                label: 'Access Denied',
-                                icon: 'pi pi-fw pi-lock',
-                                routerLink: ['/auth/access']
-                            }
-                        ]
-                    },
                     {
                         label: 'Crud',
                         icon: 'pi pi-fw pi-pencil',
@@ -65,6 +48,11 @@ export class AppMenu {
                         label: 'Empty',
                         icon: 'pi pi-fw pi-circle-off',
                         routerLink: ['/pages/empty']
+                    },
+                    {
+                        label: 'Student Users',
+                        icon: 'pi pi-fw pi-users',
+                        routerLink: ['/pages/users']
                     }
                 ]
             }
