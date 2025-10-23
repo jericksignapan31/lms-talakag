@@ -24,14 +24,15 @@ import { AuthService } from './auth.service';
                             <img [src]="logoPath" alt="IIS Logo" class="mb-8 w-16 shrink-0 mx-auto" />
                             <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4">Welcome to PrimeLand!</div>
                             <span class="text-muted-color font-medium">Sign in to continue</span>
+                            <p class="text-sm text-blue-600 dark:text-blue-400 mt-2">Use your LRN for both username and password</p>
                         </div>
 
                         <div>
-                            <label for="email1" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">Username</label>
-                            <input pInputText id="email1" type="text" placeholder="Username" class="w-full md:w-120 mb-8" [(ngModel)]="username" required />
+                            <label for="email1" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">LRN (Username)</label>
+                            <input pInputText id="email1" type="text" placeholder="Enter your LRN" class="w-full md:w-120 mb-8" [(ngModel)]="username" required />
 
-                            <label for="password1" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Password</label>
-                            <p-password id="password1" [(ngModel)]="password" placeholder="Password" [toggleMask]="true" styleClass="mb-4" [fluid]="true" [feedback]="false" [required]="true"></p-password>
+                            <label for="password1" class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Password (same as LRN)</label>
+                            <p-password id="password1" [(ngModel)]="password" placeholder="Enter your LRN" [toggleMask]="true" styleClass="mb-4" [fluid]="true" [feedback]="false" [required]="true"></p-password>
 
                             <div class="flex items-center justify-between mt-2 mb-8 gap-8">
                                 <div class="flex items-center">

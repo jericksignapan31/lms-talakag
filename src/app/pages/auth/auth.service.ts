@@ -1,11 +1,13 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, map, tap } from 'rxjs';
+import { Observable, map, tap, switchMap } from 'rxjs';
 
 export interface AuthUser {
     id: number;
     username: string;
+    password?: string;
+    lrn?: string;
     role?: string;
     name?: string;
 }
@@ -40,19 +42,67 @@ export class AuthService {
             });
         }
 
-        // Try match by username first. For demo, we also accept identifier as email if present in db.json.
+        // First try to authenticate from users table (for admin, teachers, etc.)
         const q = encodeURIComponent(idTrimmed);
-        const p = encodeURIComponent(pwTrimmed);
-        // Query both username and email fields via _or if supported; since json-server doesn't support _or by default,
-        // we do two queries sequentially by expanding with like match using q param (kept simple here by username).
-        return this.http.get<AuthUser[]>(`/api/users?username=${q}&password=${p}`).pipe(
-            map((users) => users[0] ?? null),
+        return this.http.get<AuthUser[]>(`/api/users?username=${q}`).pipe(
+            map((users) => {
+                if (users.length > 0) {
+                    const user = users[0];
+                    // Verify password matches
+                    if (user.password === pwTrimmed) {
+                        return user;
+                    }
+                }
+                return null;
+            }),
             tap((user) => {
                 if (user) {
                     // Store a fake token and the user
                     localStorage.setItem(this.tokenKey, 'demo-token');
                     localStorage.setItem(this.userKey, JSON.stringify(user));
+                } else {
+                    localStorage.removeItem(this.tokenKey);
+                    localStorage.removeItem(this.userKey);
                 }
+            }),
+            // If not found in users, try to find in students table using LRN
+            // The identifier is the LRN and password should equal LRN
+            switchMap((user: AuthUser | null) => {
+                if (user) {
+                    return new Observable<AuthUser | null>((sub) => {
+                        sub.next(user);
+                        sub.complete();
+                    });
+                }
+                // Try to find student by LRN (where LRN is the username and also the password)
+                if (idTrimmed === pwTrimmed) {
+                    return this.http.get<any[]>(`/api/students?lrn=${encodeURIComponent(idTrimmed)}`).pipe(
+                        map((students) => {
+                            if (students.length > 0) {
+                                const student = students[0];
+                                // Transform student to AuthUser format
+                                return {
+                                    id: student.id,
+                                    username: student.lrn,
+                                    lrn: student.lrn,
+                                    role: 'student',
+                                    name: student.name
+                                } as AuthUser;
+                            }
+                            return null;
+                        }),
+                        tap((authUser) => {
+                            if (authUser) {
+                                localStorage.setItem(this.tokenKey, 'demo-token');
+                                localStorage.setItem(this.userKey, JSON.stringify(authUser));
+                            }
+                        })
+                    );
+                }
+                return new Observable<AuthUser | null>((sub) => {
+                    sub.next(null);
+                    sub.complete();
+                });
             }),
             map((user) => !!user)
         );

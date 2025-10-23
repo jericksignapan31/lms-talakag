@@ -1,8 +1,9 @@
 {
   "users": [
-    { "id": 1, "username": "admin", "password": "admin123", "role": "admin", "name": "Administrator" },
-    { "id": 2, "username": "teacher1", "password": "password", "role": "teacher", "name": "Teacher One" },
-    { "id": 3, "username": "student1", "password": "password", "role": "student", "name": "Student One" }
+    { "id": 1, "lrn": "1234567890", "username": "1234567890", "password": "1234567890", "role": "student", "name": "Juan Santos" },
+    { "id": 2, "lrn": "1234567891", "username": "1234567891", "password": "1234567891", "role": "student", "name": "Maria Cruz" },
+    { "id": 100, "username": "admin", "password": "admin123", "role": "admin", "name": "Administrator" },
+    { "id": 101, "username": "teacher1", "password": "password", "role": "teacher", "name": "Teacher One" }
   ],
   "courses": [
     { "id": 1, "code": "MATH101", "title": "Basic Mathematics", "teacherId": 2 },
