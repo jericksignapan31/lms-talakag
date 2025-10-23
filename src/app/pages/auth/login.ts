@@ -21,10 +21,11 @@ import { AuthService } from './auth.service';
                 <div style="border-radius: 56px; padding: 0.3rem; background: linear-gradient(180deg, var(--primary-color) 10%, rgba(33, 150, 243, 0) 30%)">
                     <div class="w-full bg-surface-0 dark:bg-surface-900 py-20 px-8 sm:px-20" style="border-radius: 53px">
                         <div class="text-center mb-8">
-                            <img [src]="logoPath" alt="IIS Logo" class="mb-8 w-16 shrink-0 mx-auto" />
-                            <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4">Welcome to PrimeLand!</div>
+                            <div class="mb-8 flex justify-center items-center">
+                                <img src="https://firebasestorage.googleapis.com/v0/b/mobi-pms.appspot.com/o/IISLogo.png?alt=media&token=db14b8f8-4be9-4941-b61c-568a92c0a3a1" alt="IIS Logo" class="w-24 h-24 shrink-0 object-contain" />
+                            </div>
+                            <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4">Welcome to LMS Talakag!</div>
                             <span class="text-muted-color font-medium">Sign in to continue</span>
-                            <p class="text-sm text-blue-600 dark:text-blue-400 mt-2">Username: Your LRN | Password: Your LRN (or LRN@123 for new accounts)</p>
                         </div>
 
                         <div>
@@ -54,8 +55,6 @@ export class Login {
     private auth = inject(AuthService);
     private router = inject(Router);
     private route = inject(ActivatedRoute);
-
-    logoPath = 'assets/images/IISLogo.png';
 
     username: string = '';
 
