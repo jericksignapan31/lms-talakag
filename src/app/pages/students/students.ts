@@ -21,7 +21,9 @@ import { LmsAuthService } from '../../services/lms-auth.service';
 
             <div class="toolbar">
                 <button pButton pRipple label="Add New Student" icon="pi pi-plus" class="p-button-success mr-2" (click)="openAddDialog()"></button>
+                <button pButton pRipple label="Import Excel" icon="pi pi-upload" class="p-button-info mr-2" (click)="fileInput.click()"></button>
                 <button pButton pRipple label="Refresh" icon="pi pi-refresh" (click)="loadStudents()"></button>
+                <input #fileInput type="file" hidden accept=".xlsx,.xls,.csv" (change)="onFileSelected($event)" />
             </div>
 
             <p-table [value]="students" responsiveLayout="scroll" [paginator]="true" [rows]="10" [globalFilterFields]="['lrn', 'name', 'email']">
@@ -29,10 +31,16 @@ import { LmsAuthService } from '../../services/lms-auth.service';
                     <tr>
                         <th pSortableColumn="lrn">LRN <p-sortIcon field="lrn"></p-sortIcon></th>
                         <th pSortableColumn="name">Name <p-sortIcon field="name"></p-sortIcon></th>
-                        <th pSortableColumn="email">Email <p-sortIcon field="email"></p-sortIcon></th>
+                        <th pSortableColumn="grade">Grade <p-sortIcon field="grade"></p-sortIcon></th>
+                        <th pSortableColumn="section">Section <p-sortIcon field="section"></p-sortIcon></th>
                         <th pSortableColumn="sex">Sex <p-sortIcon field="sex"></p-sortIcon></th>
+                        <th pSortableColumn="birthDate">Birth Date <p-sortIcon field="birthDate"></p-sortIcon></th>
+                        <th pSortableColumn="address">Address <p-sortIcon field="address"></p-sortIcon></th>
                         <th pSortableColumn="barangay">Barangay <p-sortIcon field="barangay"></p-sortIcon></th>
-                        <th pSortableColumn="learningModality">Learning Mode <p-sortIcon field="learningModality"></p-sortIcon></th>
+                        <th pSortableColumn="municipality">Municipality <p-sortIcon field="municipality"></p-sortIcon></th>
+                        <th pSortableColumn="province">Province <p-sortIcon field="province"></p-sortIcon></th>
+                        <th pSortableColumn="contactNumber">Contact Number <p-sortIcon field="contactNumber"></p-sortIcon></th>
+                        <th pSortableColumn="learningModality">Learning Modality <p-sortIcon field="learningModality"></p-sortIcon></th>
                         <th>Actions</th>
                     </tr>
                 </ng-template>
@@ -41,9 +49,15 @@ import { LmsAuthService } from '../../services/lms-auth.service';
                     <tr>
                         <td>{{ student.lrn }}</td>
                         <td>{{ student.name }}</td>
-                        <td>{{ student.email }}</td>
+                        <td>{{ student.grade }}</td>
+                        <td>{{ student.section }}</td>
                         <td>{{ student.sex }}</td>
+                        <td>{{ student.birthDate }}</td>
+                        <td>{{ student.address }}</td>
                         <td>{{ student.barangay }}</td>
+                        <td>{{ student.municipality }}</td>
+                        <td>{{ student.province }}</td>
+                        <td>{{ student.contactNumber }}</td>
                         <td>{{ student.learningModality }}</td>
                         <td>
                             <button pButton pRipple type="button" icon="pi pi-pencil" class="p-button-rounded p-button-info mr-2" (click)="openEditDialog(student)" title="Edit"></button>
@@ -58,7 +72,8 @@ import { LmsAuthService } from '../../services/lms-auth.service';
             <div class="form">
                 <div><label>LRN</label><input pInputText [(ngModel)]="studentForm.lrn" [disabled]="isEditMode" /></div>
                 <div><label>Name</label><input pInputText [(ngModel)]="studentForm.name" /></div>
-                <div><label>Email</label><input pInputText type="email" [(ngModel)]="studentForm.email" /></div>
+                <div><label>Grade</label><input pInputText [(ngModel)]="studentForm.grade" placeholder="e.g. Grade 7, Grade 10" /></div>
+                <div><label>Section</label><input pInputText [(ngModel)]="studentForm.section" placeholder="e.g. A, B, C" /></div>
                 <div>
                     <label>Sex</label
                     ><select [(ngModel)]="studentForm.sex">
@@ -71,7 +86,7 @@ import { LmsAuthService } from '../../services/lms-auth.service';
                 <div><label>Barangay</label><input pInputText [(ngModel)]="studentForm.barangay" /></div>
                 <div><label>Municipality</label><input pInputText [(ngModel)]="studentForm.municipality" /></div>
                 <div><label>Province</label><input pInputText [(ngModel)]="studentForm.province" /></div>
-                <div><label>Contact</label><input pInputText [(ngModel)]="studentForm.contactNumber" /></div>
+                <div><label>Contact Number</label><input pInputText [(ngModel)]="studentForm.contactNumber" /></div>
                 <div>
                     <label>Learning Modality</label
                     ><select [(ngModel)]="studentForm.learningModality">
@@ -80,6 +95,7 @@ import { LmsAuthService } from '../../services/lms-auth.service';
                         <option>Hybrid</option>
                     </select>
                 </div>
+                <div><label>Email</label><input pInputText type="email" [(ngModel)]="studentForm.email" /></div>
             </div>
             <ng-template pTemplate="footer">
                 <button pButton label="Cancel" (click)="hideDialog()" class="p-button-text"></button>
@@ -139,6 +155,8 @@ export class Students implements OnInit {
         lrn: '',
         name: '',
         email: '',
+        grade: '',
+        section: '',
         sex: '',
         birthDate: '',
         address: '',
@@ -164,7 +182,7 @@ export class Students implements OnInit {
     openAddDialog() {
         this.isEditMode = false;
         this.editingId = null;
-        this.studentForm = { lrn: '', name: '', email: '', sex: '', birthDate: '', address: '', barangay: '', municipality: '', province: '', contactNumber: '', learningModality: '' };
+        this.studentForm = { lrn: '', name: '', email: '', grade: '', section: '', sex: '', birthDate: '', address: '', barangay: '', municipality: '', province: '', contactNumber: '', learningModality: '' };
         this.displayDialog = true;
     }
 
@@ -220,5 +238,162 @@ export class Students implements OnInit {
         this.displayDialog = false;
         this.isEditMode = false;
         this.editingId = null;
+    }
+
+    onFileSelected(event: any) {
+        const files = event.target.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            if (file.name.endsWith('.csv')) {
+                this.parseCSV(file);
+            } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+                this.parseExcel(file);
+            } else {
+                this.messageService.add({ severity: 'warn', summary: 'Invalid File', detail: 'Only CSV and Excel files are supported' });
+            }
+            event.target.value = '';
+        }
+    }
+
+    parseCSV(file: File) {
+        const reader = new FileReader();
+        reader.onload = (e: any) => {
+            try {
+                const csv = e.target.result;
+                const rows = csv.split('\n').filter((row: string) => row.trim());
+                if (rows.length < 2) {
+                    this.messageService.add({ severity: 'warn', summary: 'Invalid File', detail: 'File must have headers and at least one row' });
+                    return;
+                }
+
+                const headers = rows[0].split(',').map((h: string) => h.trim().toLowerCase());
+                const importedStudents: Student[] = [];
+
+                for (let i = 1; i < rows.length; i++) {
+                    const values = rows[i].split(',').map((v: string) => v.trim().replace(/"/g, ''));
+                    if (values.length > 0 && values[0]) {
+                        const student: Student = {
+                            lrn: values[headers.indexOf('lrn')] || '',
+                            name: values[headers.indexOf('name')] || '',
+                            email: values[headers.indexOf('email')] || '',
+                            grade: values[headers.indexOf('grade')] || '',
+                            section: values[headers.indexOf('section')] || '',
+                            sex: values[headers.indexOf('sex')] || '',
+                            birthDate: values[headers.indexOf('birthdate')] || '',
+                            address: values[headers.indexOf('address')] || '',
+                            barangay: values[headers.indexOf('barangay')] || '',
+                            municipality: values[headers.indexOf('municipality')] || '',
+                            province: values[headers.indexOf('province')] || '',
+                            contactNumber: values[headers.indexOf('contactnumber')] || '',
+                            learningModality: values[headers.indexOf('learningmodality')] || ''
+                        };
+                        if (student.lrn && student.name) {
+                            importedStudents.push(student);
+                        }
+                    }
+                }
+
+                if (importedStudents.length === 0) {
+                    this.messageService.add({ severity: 'warn', summary: 'No Data', detail: 'No valid student records found' });
+                    return;
+                }
+
+                this.importStudents(importedStudents, file.name);
+            } catch (error) {
+                this.messageService.add({ severity: 'error', summary: 'Parse Error', detail: 'Failed to parse CSV file' });
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    parseExcel(file: File) {
+        const reader = new FileReader();
+        reader.onload = (e: any) => {
+            try {
+                const data = e.target.result;
+                const rows = data
+                    .split('\n')
+                    .map((row: string) => row.trim())
+                    .filter((row: string) => row.length > 0);
+
+                if (rows.length < 2) {
+                    this.messageService.add({ severity: 'warn', summary: 'Invalid File', detail: 'File must have headers and at least one row' });
+                    return;
+                }
+
+                const delimiter = rows[0].includes('\t') ? '\t' : ',';
+                const headers = rows[0].split(delimiter).map((h: string) => h.trim().toLowerCase());
+                const importedStudents: Student[] = [];
+
+                for (let i = 1; i < rows.length; i++) {
+                    const values = rows[i].split(delimiter).map((v: string) => v.trim().replace(/"/g, ''));
+                    if (values.length > 0 && values[0]) {
+                        const student: Student = {
+                            lrn: values[headers.indexOf('lrn')] || '',
+                            name: values[headers.indexOf('name')] || '',
+                            email: values[headers.indexOf('email')] || '',
+                            grade: values[headers.indexOf('grade')] || '',
+                            section: values[headers.indexOf('section')] || '',
+                            sex: values[headers.indexOf('sex')] || '',
+                            birthDate: values[headers.indexOf('birthdate')] || '',
+                            address: values[headers.indexOf('address')] || '',
+                            barangay: values[headers.indexOf('barangay')] || '',
+                            municipality: values[headers.indexOf('municipality')] || '',
+                            province: values[headers.indexOf('province')] || '',
+                            contactNumber: values[headers.indexOf('contactnumber')] || '',
+                            learningModality: values[headers.indexOf('learningmodality')] || ''
+                        };
+                        if (student.lrn && student.name) {
+                            importedStudents.push(student);
+                        }
+                    }
+                }
+
+                if (importedStudents.length === 0) {
+                    this.messageService.add({ severity: 'warn', summary: 'No Data', detail: 'No valid student records found' });
+                    return;
+                }
+
+                this.importStudents(importedStudents, file.name);
+            } catch (error) {
+                this.messageService.add({ severity: 'error', summary: 'Parse Error', detail: 'Failed to parse Excel file' });
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    async importStudents(importedStudents: Student[], fileName: string) {
+        try {
+            let importedCount = 0;
+            let skippedCount = 0;
+
+            for (const student of importedStudents) {
+                try {
+                    // Create Firebase account
+                    await this.authService.createStudentAccount(student.lrn);
+                    // Add student to Firestore
+                    await this.studentService.addStudent(student);
+                    importedCount++;
+                } catch (error: any) {
+                    // Skip if account already exists or other error
+                    if (error.message.includes('already exists')) {
+                        skippedCount++;
+                    } else {
+                        console.error(`Error importing student ${student.lrn}:`, error);
+                        skippedCount++;
+                    }
+                }
+            }
+
+            this.messageService.add({
+                severity: importedCount > 0 ? 'success' : 'warn',
+                summary: 'Import Complete',
+                detail: `Imported: ${importedCount}, Skipped: ${skippedCount} from ${fileName}`
+            });
+
+            this.loadStudents();
+        } catch (error) {
+            this.messageService.add({ severity: 'error', summary: 'Import Error', detail: 'Failed to import students' });
+        }
     }
 }

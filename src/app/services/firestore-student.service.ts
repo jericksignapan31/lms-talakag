@@ -7,6 +7,8 @@ export interface Student {
     lrn: string;
     name: string;
     email?: string;
+    grade?: string;
+    section?: string;
     sex: string;
     birthDate: string;
     address: string;
