@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { Auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, User, updateProfile, sendPasswordResetEmail } from 'firebase/auth';
+import { Auth, signInWithEmailAndPassword, signOut, onAuthStateChanged, User, updateProfile, sendPasswordResetEmail, createUserWithEmailAndPassword } from 'firebase/auth';
 import { inject } from '@angular/core';
-import { Observable, from, of, Subject } from 'rxjs';
-import { switchMap, map, tap } from 'rxjs/operators';
+import { Observable, from, of, Subject, throwError } from 'rxjs';
+import { switchMap, map, tap, catchError } from 'rxjs/operators';
 import { FirebaseService } from './firebase.service';
 import { FirestoreStudentService, Student } from './firestore-student.service';
 
@@ -46,20 +46,19 @@ export class LmsAuthService {
     /**
      * Login using LRN as username and password
      * LRN = username
-     * LRN = password
+     * Password can be either: {lrn} (old) or {lrn}@123 (new)
      * Email format: {lrn}@lms.talakag
      */
     loginWithLRN(lrn: string, password: string): Observable<AuthenticatedUser | null> {
-        // Verify password equals LRN
-        if (password !== lrn) {
-            return new Observable((observer) => {
-                observer.error(new Error('Invalid credentials'));
-                observer.complete();
-            });
-        }
-
         const email = `${lrn}@lms.talakag`;
-        return from(signInWithEmailAndPassword(this.auth, email, lrn)).pipe(
+
+        // Try new password format first: {lrn}@123
+        const newPasswordFormat = `${lrn}@123`;
+        // Also try old password format for backward compatibility: {lrn}
+        const oldPasswordFormat = lrn;
+
+        // Try new format first
+        return from(signInWithEmailAndPassword(this.auth, email, newPasswordFormat)).pipe(
             switchMap(async (result) => {
                 const studentData = await this.studentService.getStudentByLRN(lrn);
                 return {
@@ -68,7 +67,25 @@ export class LmsAuthService {
                     role: studentData ? 'student' : 'admin'
                 } as AuthenticatedUser;
             }),
-            tap((user) => this.currentUserSubject.next(user))
+            tap((user) => this.currentUserSubject.next(user)),
+            // If new format fails, try old format
+            catchError((error) => {
+                // Only retry with old format if it's an auth error
+                if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                    return from(signInWithEmailAndPassword(this.auth, email, oldPasswordFormat)).pipe(
+                        switchMap(async (result) => {
+                            const studentData = await this.studentService.getStudentByLRN(lrn);
+                            return {
+                                ...result.user,
+                                studentData,
+                                role: studentData ? 'student' : 'admin'
+                            } as AuthenticatedUser;
+                        }),
+                        tap((user) => this.currentUserSubject.next(user))
+                    );
+                }
+                return throwError(() => error);
+            })
         );
     }
 
@@ -141,6 +158,25 @@ export class LmsAuthService {
         const user = this.auth.currentUser;
         if (user) {
             await user.delete();
+        }
+    }
+
+    /**
+     * Create a student account in Firebase Authentication
+     * Email format: {lrn}@lms.talakag
+     * Password: {lrn}@123 (appends @123 to ensure minimum 6 characters)
+     */
+    async createStudentAccount(lrn: string): Promise<string | null> {
+        try {
+            const email = `${lrn}@lms.talakag`;
+            // Append @123 to ensure password is at least 6 characters
+            const password = `${lrn}@123`;
+
+            const result = await createUserWithEmailAndPassword(this.auth, email, password);
+            return result.user.uid;
+        } catch (error: any) {
+            console.error('Error creating student account:', error);
+            throw new Error(`Failed to create account: ${error.message}`);
         }
     }
 }

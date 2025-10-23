@@ -8,6 +8,7 @@ import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { FirestoreStudentService, Student } from '../../services/firestore-student.service';
+import { LmsAuthService } from '../../services/lms-auth.service';
 
 @Component({
     selector: 'app-students',
@@ -58,14 +59,27 @@ import { FirestoreStudentService, Student } from '../../services/firestore-stude
                 <div><label>LRN</label><input pInputText [(ngModel)]="studentForm.lrn" [disabled]="isEditMode" /></div>
                 <div><label>Name</label><input pInputText [(ngModel)]="studentForm.name" /></div>
                 <div><label>Email</label><input pInputText type="email" [(ngModel)]="studentForm.email" /></div>
-                <div><label>Sex</label><select [(ngModel)]="studentForm.sex"><option>Male</option><option>Female</option></select></div>
+                <div>
+                    <label>Sex</label
+                    ><select [(ngModel)]="studentForm.sex">
+                        <option>Male</option>
+                        <option>Female</option>
+                    </select>
+                </div>
                 <div><label>Birth Date</label><input pInputText type="date" [(ngModel)]="studentForm.birthDate" /></div>
                 <div><label>Address</label><input pInputText [(ngModel)]="studentForm.address" /></div>
                 <div><label>Barangay</label><input pInputText [(ngModel)]="studentForm.barangay" /></div>
                 <div><label>Municipality</label><input pInputText [(ngModel)]="studentForm.municipality" /></div>
                 <div><label>Province</label><input pInputText [(ngModel)]="studentForm.province" /></div>
                 <div><label>Contact</label><input pInputText [(ngModel)]="studentForm.contactNumber" /></div>
-                <div><label>Learning Modality</label><select [(ngModel)]="studentForm.learningModality"><option>Face-to-Face</option><option>Online</option><option>Hybrid</option></select></div>
+                <div>
+                    <label>Learning Modality</label
+                    ><select [(ngModel)]="studentForm.learningModality">
+                        <option>Face-to-Face</option>
+                        <option>Online</option>
+                        <option>Hybrid</option>
+                    </select>
+                </div>
             </div>
             <ng-template pTemplate="footer">
                 <button pButton label="Cancel" (click)="hideDialog()" class="p-button-text"></button>
@@ -75,20 +89,45 @@ import { FirestoreStudentService, Student } from '../../services/firestore-stude
 
         <p-toast></p-toast>
     `,
-    styles: [`
-        :host ::ng-deep {
-            .toolbar { margin-bottom: 1rem; display: flex; gap: 0.5rem; }
-            .form { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem 0; }
-            .form div { display: flex; flex-direction: column; gap: 0.5rem; }
-            .form label { font-weight: 600; }
-            .form input, .form select { padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; }
-            .mr-2 { margin-right: 0.5rem; }
-        }
-    `]
+    styles: [
+        `
+            :host ::ng-deep {
+                .toolbar {
+                    margin-bottom: 1rem;
+                    display: flex;
+                    gap: 0.5rem;
+                }
+                .form {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 1rem;
+                    padding: 1rem 0;
+                }
+                .form div {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.5rem;
+                }
+                .form label {
+                    font-weight: 600;
+                }
+                .form input,
+                .form select {
+                    padding: 0.5rem;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                }
+                .mr-2 {
+                    margin-right: 0.5rem;
+                }
+            }
+        `
+    ]
 })
 export class Students implements OnInit {
     private studentService = inject(FirestoreStudentService);
     private messageService = inject(MessageService);
+    private authService = inject(LmsAuthService);
 
     students: Student[] = [];
     displayDialog = false;
@@ -97,12 +136,22 @@ export class Students implements OnInit {
     editingId: string | null = null;
 
     studentForm: Student = {
-        lrn: '', name: '', email: '', sex: '', birthDate: '',
-        address: '', barangay: '', municipality: '', province: '',
-        contactNumber: '', learningModality: ''
+        lrn: '',
+        name: '',
+        email: '',
+        sex: '',
+        birthDate: '',
+        address: '',
+        barangay: '',
+        municipality: '',
+        province: '',
+        contactNumber: '',
+        learningModality: ''
     };
 
-    ngOnInit() { this.loadStudents(); }
+    ngOnInit() {
+        this.loadStudents();
+    }
 
     async loadStudents() {
         try {
@@ -135,10 +184,17 @@ export class Students implements OnInit {
             }
             if (this.isEditMode && this.editingId) {
                 await this.studentService.updateStudent(this.editingId, this.studentForm);
-                this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Updated' });
+                this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Student updated successfully' });
             } else {
+                // Create Firebase Authentication account first
+                const uid = await this.authService.createStudentAccount(this.studentForm.lrn);
+                // Then save student data to Firestore
                 await this.studentService.addStudent(this.studentForm);
-                this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Added' });
+                this.messageService.add({
+                    severity: 'success',
+                    summary: 'Success',
+                    detail: `Account created! Email: ${this.studentForm.lrn}@lms.talakag | Password: ${this.studentForm.lrn}@123`
+                });
             }
             this.hideDialog();
             this.loadStudents();
