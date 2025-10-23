@@ -1,20 +1,22 @@
-import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, map, tap, switchMap } from 'rxjs';
+import { Observable, catchError, of } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
+import { LmsAuthService } from '../../services/lms-auth.service';
 
 export interface AuthUser {
-    id: number;
+    id?: string;
     username: string;
     password?: string;
     lrn?: string;
     role?: string;
     name?: string;
+    email?: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-    private http = inject(HttpClient);
+    private lmsAuth = inject(LmsAuthService);
     private router = inject(Router);
     private readonly tokenKey = 'auth_token';
     private readonly userKey = 'auth_user';
@@ -28,89 +30,56 @@ export class AuthService {
         return raw ? (JSON.parse(raw) as AuthUser) : null;
     }
 
-    login(identifier: string, password: string): Observable<boolean> {
-        // Basic validation: do not attempt if empty
-        const idTrimmed = (identifier ?? '').trim();
+    /**
+     * Login using LRN as both username and password
+     * Uses Firebase Authentication + Firestore
+     */
+    login(lrn: string, password: string): Observable<boolean> {
+        // Validate input
+        const lrnTrimmed = (lrn ?? '').trim();
         const pwTrimmed = (password ?? '').trim();
-        if (!idTrimmed || !pwTrimmed) {
-            return new Observable<boolean>((subscriber) => {
-                // Ensure we don't keep stale auth on invalid attempt
-                localStorage.removeItem(this.tokenKey);
-                localStorage.removeItem(this.userKey);
-                subscriber.next(false);
-                subscriber.complete();
-            });
+        
+        if (!lrnTrimmed || !pwTrimmed) {
+            localStorage.removeItem(this.tokenKey);
+            localStorage.removeItem(this.userKey);
+            return of(false);
         }
 
-        // First try to authenticate from users table (for admin, teachers, etc.)
-        const q = encodeURIComponent(idTrimmed);
-        return this.http.get<AuthUser[]>(`/api/users?username=${q}`).pipe(
-            map((users) => {
-                if (users.length > 0) {
-                    const user = users[0];
-                    // Verify password matches
-                    if (user.password === pwTrimmed) {
-                        return user;
-                    }
-                }
-                return null;
-            }),
+        // Use Firebase LMS Auth Service
+        return this.lmsAuth.loginWithLRN(lrnTrimmed, pwTrimmed).pipe(
             tap((user) => {
                 if (user) {
-                    // Store a fake token and the user
-                    localStorage.setItem(this.tokenKey, 'demo-token');
-                    localStorage.setItem(this.userKey, JSON.stringify(user));
+                    // Store auth token and user data
+                    localStorage.setItem(this.tokenKey, 'firebase-token');
+                    const authUser: AuthUser = {
+                        id: user.uid,
+                        username: lrnTrimmed,
+                        lrn: lrnTrimmed,
+                        role: user.role || 'student',
+                        name: user.studentData?.name || user.displayName || '',
+                        email: user.email || ''
+                    };
+                    localStorage.setItem(this.userKey, JSON.stringify(authUser));
                 } else {
                     localStorage.removeItem(this.tokenKey);
                     localStorage.removeItem(this.userKey);
                 }
             }),
-            // If not found in users, try to find in students table using LRN
-            // The identifier is the LRN and password should equal LRN
-            switchMap((user: AuthUser | null) => {
-                if (user) {
-                    return new Observable<AuthUser | null>((sub) => {
-                        sub.next(user);
-                        sub.complete();
-                    });
-                }
-                // Try to find student by LRN (where LRN is the username and also the password)
-                if (idTrimmed === pwTrimmed) {
-                    return this.http.get<any[]>(`/api/students?lrn=${encodeURIComponent(idTrimmed)}`).pipe(
-                        map((students) => {
-                            if (students.length > 0) {
-                                const student = students[0];
-                                // Transform student to AuthUser format
-                                return {
-                                    id: student.id,
-                                    username: student.lrn,
-                                    lrn: student.lrn,
-                                    role: 'student',
-                                    name: student.name
-                                } as AuthUser;
-                            }
-                            return null;
-                        }),
-                        tap((authUser) => {
-                            if (authUser) {
-                                localStorage.setItem(this.tokenKey, 'demo-token');
-                                localStorage.setItem(this.userKey, JSON.stringify(authUser));
-                            }
-                        })
-                    );
-                }
-                return new Observable<AuthUser | null>((sub) => {
-                    sub.next(null);
-                    sub.complete();
-                });
-            }),
-            map((user) => !!user)
+            map((user) => !!user),
+            catchError((error) => {
+                console.error('Login error:', error);
+                localStorage.removeItem(this.tokenKey);
+                localStorage.removeItem(this.userKey);
+                return of(false);
+            })
         );
     }
 
     logout(): void {
-        localStorage.removeItem(this.tokenKey);
-        localStorage.removeItem(this.userKey);
-        this.router.navigate(['/auth/login']);
+        this.lmsAuth.logout().subscribe(() => {
+            localStorage.removeItem(this.tokenKey);
+            localStorage.removeItem(this.userKey);
+            this.router.navigate(['/auth/login']);
+        });
     }
 }
