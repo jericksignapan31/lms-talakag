@@ -57,3 +57,27 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+## Mock API (json-server)
+
+This project includes a mock REST API powered by json-server to help with local development.
+
+Endpoints base URL: http://localhost:3000
+
+When running the Angular dev server, use the `/api` prefix and it will be proxied to the mock API. Example requests from the app should call `/api/users`, `/api/courses`, etc.
+
+### Scripts
+
+- `npm run start:api` — start json-server at http://localhost:3000
+- `npm run start:dev` — run Angular dev server and json-server together
+
+### Data file
+
+Edit `db.json` at the project root to change seed data. json-server provides standard REST routes:
+
+- GET/POST `/:resource` (e.g., `/users`, `/courses`)
+- GET/PATCH/PUT/DELETE `/:resource/:id`
+
+### Proxy
+
+`proxy.conf.json` forwards `/api/*` to `http://localhost:3000/*` so you can call `/api/...` from Angular without CORS issues.

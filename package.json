@@ -7,7 +7,10 @@
         "build": "ng build",
         "watch": "ng build --watch --configuration development",
         "format": "prettier --write \"**/*.{js,mjs,ts,mts,d.ts,html}\" --cache",
-        "test": "ng test"
+        "test": "ng test",
+        "json-server": "json-server --watch db.json --port 3000",
+        "start:api": "npm run json-server",
+        "start:dev": "concurrently -k -n angular,api -c blue,green \"npm start\" \"npm run start:api\""
     },
     "private": true,
     "dependencies": {
@@ -36,12 +39,14 @@
         "@angular/compiler-cli": "^20",
         "@types/jasmine": "~5.1.0",
         "autoprefixer": "^10.4.20",
+        "concurrently": "^9.2.1",
         "eslint": "^9.30.1",
         "eslint-config-prettier": "^10.1.5",
         "eslint-plugin-import": "^2.32.0",
         "eslint-plugin-prefer-arrow": "^1.2.3",
         "eslint-plugin-prettier": "^5.5.1",
         "jasmine-core": "~5.8.0",
+        "json-server": "^1.0.0-beta.3",
         "karma": "~6.4.4",
         "karma-chrome-launcher": "~3.2.0",
         "karma-coverage": "~2.2.1",
