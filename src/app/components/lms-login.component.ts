@@ -16,13 +16,14 @@ import { LmsAuthService } from '../services/lms-auth.service';
     providers: [MessageService],
     template: `
         <div class="login-container">
-      <div class="login-card">
-        <h1>LMS Talakag</h1>
-        <h2>Student Login</h2>
+            <div class="login-card">
+                <h1>LMS Talakag</h1>
+                <h2>Student Login</h2>
 
-        <div *ngIf="messages.length > 0" [ngClass]="'alert-' + messages[0].severity" class="alert">
-          <strong>{{ messages[0].summary }}:</strong> {{ messages[0].detail }}
-        </div>                <div class="form-group">
+                <div *ngIf="messages.length > 0" [ngClass]="'alert-' + messages[0].severity" class="alert">
+                    <strong>{{ messages[0].summary }}:</strong> {{ messages[0].detail }}
+                </div>
+                <div class="form-group">
                     <label for="lrn">LRN (Learner Reference Number)</label>
                     <input id="lrn" pInputText type="text" [(ngModel)]="lrn" placeholder="Enter your LRN" (keyup.enter)="login()" class="w-full" />
                 </div>

@@ -38,7 +38,7 @@ export class AuthService {
         // Validate input
         const lrnTrimmed = (lrn ?? '').trim();
         const pwTrimmed = (password ?? '').trim();
-        
+
         if (!lrnTrimmed || !pwTrimmed) {
             localStorage.removeItem(this.tokenKey);
             localStorage.removeItem(this.userKey);
