@@ -18,6 +18,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { InputMaskModule } from 'primeng/inputmask';
 import { FirestoreTeacherService, Teacher } from '../../services/firestore-teacher.service';
+import { LmsAuthService } from '../../services/lms-auth.service';
 
 interface Column {
     field: string;
@@ -197,6 +198,7 @@ export class TeacherComponent implements OnInit {
     private teacherService = inject(FirestoreTeacherService);
     private messageService = inject(MessageService);
     private confirmationService = inject(ConfirmationService);
+    private authService = inject(LmsAuthService);
 
     @ViewChild('dt') dataTable?: Table;
 
@@ -530,9 +532,21 @@ export class TeacherComponent implements OnInit {
             if (importedTeachers.length > 0) {
                 let successCount = 0;
                 let failureCount = 0;
+                let accountCreationErrors: string[] = [];
 
                 for (const teacher of importedTeachers) {
                     try {
+                        // First, create Firebase account with teacherID
+                        try {
+                            await this.authService.createTeacherAccount(teacher.teacherID);
+                        } catch (accountError: any) {
+                            // If account creation fails, still try to save the teacher record
+                            const errorMsg = accountError.message || 'Unknown error';
+                            console.warn(`Failed to create Firebase account for teacher ${teacher.teacherID}:`, errorMsg);
+                            accountCreationErrors.push(`${teacher.teacherID}: ${errorMsg}`);
+                        }
+
+                        // Save the teacher record in Firestore
                         await this.teacherService.addTeacher(teacher);
                         successCount++;
                     } catch (error) {
@@ -543,10 +557,18 @@ export class TeacherComponent implements OnInit {
 
                 await this.loadTeachersFromFirestore();
 
+                let detailMessage = `Successfully imported ${successCount} teacher(s)`;
+                if (failureCount > 0) {
+                    detailMessage += `. Failed to import ${failureCount} teacher(s).`;
+                }
+                if (accountCreationErrors.length > 0) {
+                    detailMessage += `\n\nSome Firebase accounts couldn't be created (check console for details)`;
+                }
+
                 this.messageService.add({
                     severity: 'success',
                     summary: 'Import Complete',
-                    detail: `Successfully imported ${successCount} teacher(s). ${failureCount > 0 ? `Failed to import ${failureCount} teacher(s).` : ''}`,
+                    detail: detailMessage,
                     life: 5000
                 });
             } else {
@@ -656,9 +678,21 @@ export class TeacherComponent implements OnInit {
             if (importedTeachers.length > 0) {
                 let successCount = 0;
                 let failureCount = 0;
+                let accountCreationErrors: string[] = [];
 
                 for (const teacher of importedTeachers) {
                     try {
+                        // First, create Firebase account with teacherID
+                        try {
+                            await this.authService.createTeacherAccount(teacher.teacherID);
+                        } catch (accountError: any) {
+                            // If account creation fails, still try to save the teacher record
+                            const errorMsg = accountError.message || 'Unknown error';
+                            console.warn(`Failed to create Firebase account for teacher ${teacher.teacherID}:`, errorMsg);
+                            accountCreationErrors.push(`${teacher.teacherID}: ${errorMsg}`);
+                        }
+
+                        // Save the teacher record in Firestore
                         await this.teacherService.addTeacher(teacher);
                         successCount++;
                     } catch (error) {
@@ -669,10 +703,18 @@ export class TeacherComponent implements OnInit {
 
                 await this.loadTeachersFromFirestore();
 
+                let detailMessage = `Successfully imported ${successCount} teacher(s)`;
+                if (failureCount > 0) {
+                    detailMessage += `. Failed to import ${failureCount} teacher(s).`;
+                }
+                if (accountCreationErrors.length > 0) {
+                    detailMessage += `\n\nSome Firebase accounts couldn't be created (check console for details)`;
+                }
+
                 this.messageService.add({
                     severity: 'success',
                     summary: 'Import Complete',
-                    detail: `Successfully imported ${successCount} teacher(s). ${failureCount > 0 ? `Failed to import ${failureCount} teacher(s).` : ''}`,
+                    detail: detailMessage,
                     life: 5000
                 });
             } else {
