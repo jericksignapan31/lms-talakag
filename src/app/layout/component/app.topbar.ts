@@ -5,7 +5,7 @@ import { CommonModule } from '@angular/common';
 import { StyleClassModule } from 'primeng/styleclass';
 import { AppConfigurator } from './app.configurator';
 import { LayoutService } from '../service/layout.service';
-import { LmsAuthService } from '../../services/lms-auth.service';
+import { AuthService } from '../../pages/auth/auth.service';
 
 @Component({
     selector: 'app-topbar',
@@ -85,7 +85,7 @@ export class AppTopbar {
     userMenuItems: MenuItem[] = [];
     currentUserName: string = 'User';
     isUserMenuOpen: boolean = false;
-    private authService = inject(LmsAuthService);
+    private authService = inject(AuthService);
     private router = inject(Router);
 
     constructor(public layoutService: LayoutService) {
@@ -109,13 +109,12 @@ export class AppTopbar {
     }
 
     private loadCurrentUser() {
-        this.authService.getCurrentUser().subscribe((user) => {
-            if (user) {
-                this.currentUserName = user.displayName || user.email?.split('@')[0] || 'User';
-            } else {
-                this.currentUserName = 'User';
-            }
-        });
+        const user = this.authService.currentUser;
+        if (user) {
+            this.currentUserName = user.name || user.email?.split('@')[0] || 'User';
+        } else {
+            this.currentUserName = 'User';
+        }
     }
 
     toggleUserMenu() {
@@ -129,18 +128,9 @@ export class AppTopbar {
 
     logout() {
         this.isUserMenuOpen = false;
-        this.authService.logout().subscribe(
-            () => {
-                this.currentUserName = 'User';
-                // Navigate to login with replaceUrl to clear history
-                this.router.navigate(['/auth/login'], { replaceUrl: true });
-            },
-            (error) => {
-                console.error('Logout error:', error);
-                // Still redirect to login even if logout fails
-                this.router.navigate(['/auth/login'], { replaceUrl: true });
-            }
-        );
+        this.currentUserName = 'User';
+        // Call the logout from AuthService which will handle the page reload
+        this.authService.logout().subscribe();
     }
 
     toggleDarkMode() {
