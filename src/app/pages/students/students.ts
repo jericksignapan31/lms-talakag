@@ -443,7 +443,7 @@ export class Students implements OnInit {
             try {
                 const csv = e.target.result;
                 const rows = this.parseCSVRows(csv);
-                
+
                 if (rows.length < 2) {
                     this.messageService.add({ severity: 'warn', summary: 'Invalid File', detail: 'File must have headers and at least one row' });
                     return;
@@ -516,7 +516,7 @@ export class Students implements OnInit {
                 // End of row
                 if (current.trim() || row.length > 0) {
                     row.push(current.trim());
-                    if (row.some(field => field)) {
+                    if (row.some((field) => field)) {
                         rows.push(row);
                     }
                     row = [];
@@ -534,7 +534,7 @@ export class Students implements OnInit {
         // Handle last field and row
         if (current.trim() || row.length > 0) {
             row.push(current.trim());
-            if (row.some(field => field)) {
+            if (row.some((field) => field)) {
                 rows.push(row);
             }
         }
@@ -576,7 +576,7 @@ export class Students implements OnInit {
 
                 // Parse using improved CSV parser that handles quoted fields
                 const parsedRows = this.parseCSVRows(data);
-                
+
                 if (parsedRows.length < 2) {
                     this.messageService.add({ severity: 'warn', summary: 'Invalid File', detail: 'File must have headers and at least one row' });
                     return;
