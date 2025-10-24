@@ -139,7 +139,7 @@ export class AuthService {
                         username: emailTrimmed,
                         email: emailTrimmed,
                         role: user.role || 'admin',
-                        name: user.displayName || '',
+                        name: user.displayName || ''
                     };
                     localStorage.setItem(this.userKey, JSON.stringify(authUser));
                 } else {

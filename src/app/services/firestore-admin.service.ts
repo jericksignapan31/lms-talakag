@@ -170,7 +170,7 @@ export class FirestoreAdminService {
         try {
             // Create Firebase Auth account
             const uid = await this.authService.createAdminAccount(admin.email, password);
-            
+
             // Add admin record to Firestore
             const adminId = await this.addAdmin(admin);
             console.log(`Admin account created for ${admin.name} (${admin.email})`);
@@ -188,7 +188,7 @@ export class FirestoreAdminService {
         try {
             // Delete from Firestore
             await this.deleteAdmin(id);
-            
+
             // Delete Firebase account
             await this.authService.deleteAdminAccount(email);
             console.log(`Admin account deleted for ${email}`);
