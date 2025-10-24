@@ -294,19 +294,11 @@ export class BorrowingComponent implements OnInit {
             }
 
             // CHECK IF BOOK IS ALREADY BORROWED
-            const isBookAlreadyBorrowed = this.borrowings().some(
-                (borrowing) => 
-                    borrowing.bookAccessionNumber === this.selectedBookAccessionNumber && 
-                    (borrowing.status === 'borrowed' || borrowing.status === 'overdue')
-            );
+            const isBookAlreadyBorrowed = this.borrowings().some((borrowing) => borrowing.bookAccessionNumber === this.selectedBookAccessionNumber && (borrowing.status === 'borrowed' || borrowing.status === 'overdue'));
 
             if (isBookAlreadyBorrowed) {
                 // Find the borrowing record to show who has it
-                const currentBorrowing = this.borrowings().find(
-                    (borrowing) => 
-                        borrowing.bookAccessionNumber === this.selectedBookAccessionNumber && 
-                        (borrowing.status === 'borrowed' || borrowing.status === 'overdue')
-                );
+                const currentBorrowing = this.borrowings().find((borrowing) => borrowing.bookAccessionNumber === this.selectedBookAccessionNumber && (borrowing.status === 'borrowed' || borrowing.status === 'overdue'));
 
                 this.messageService.add({
                     severity: 'error',

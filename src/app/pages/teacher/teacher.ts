@@ -56,7 +56,7 @@ interface ExportColumn {
     template: `
         <p-toast />
         <p-confirmDialog />
-        
+
         <p-toolbar styleClass="mb-6">
             <ng-template #start>
                 <p-button label="New" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="openNew()" />
@@ -400,19 +400,7 @@ export class TeacherComponent implements OnInit {
         let csv = this.exportColumns.map((c) => c.title).join(',') + '\n';
 
         this.teachers().forEach((data) => {
-            csv +=
-                (data.name || '') +
-                ',' +
-                (data.teacherID || '') +
-                ',' +
-                (data.birthDate || '') +
-                ',' +
-                (data.department || '') +
-                ',' +
-                (data.email || '') +
-                ',' +
-                (data.contactNumber || '') +
-                '\n';
+            csv += (data.name || '') + ',' + (data.teacherID || '') + ',' + (data.birthDate || '') + ',' + (data.department || '') + ',' + (data.email || '') + ',' + (data.contactNumber || '') + '\n';
         });
 
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -729,28 +717,27 @@ export class TeacherComponent implements OnInit {
             const lowerHeader = header.toLowerCase();
 
             // Name matching - with scoring
-            if (normalized.includes('fullname') || 
-                (normalized.includes('name') && !normalized.includes('id') && lowerHeader.includes('name'))) {
+            if (normalized.includes('fullname') || (normalized.includes('name') && !normalized.includes('id') && lowerHeader.includes('name'))) {
                 nameMatches.push({ index, score: normalized.includes('fullname') ? 10 : 5 });
             }
 
             // Teacher ID matching - with scoring
-            if ((normalized.includes('teacher') && normalized.includes('id')) ||
-                (normalized.includes('teacherid')) ||
+            if (
+                (normalized.includes('teacher') && normalized.includes('id')) ||
+                normalized.includes('teacherid') ||
                 (lowerHeader.includes('teacher') && lowerHeader.includes('id')) ||
-                (lowerHeader.includes("teacher's") && lowerHeader.includes('id'))) {
+                (lowerHeader.includes("teacher's") && lowerHeader.includes('id'))
+            ) {
                 teacherIdMatches.push({ index, score: 10 });
             }
 
             // Birth Date matching
-            if (normalized.includes('birth') || normalized.includes('dob') || 
-                lowerHeader.includes('birthdate') || lowerHeader.includes('date of birth')) {
+            if (normalized.includes('birth') || normalized.includes('dob') || lowerHeader.includes('birthdate') || lowerHeader.includes('date of birth')) {
                 birthdateMatches.push({ index, score: 10 });
             }
 
             // Department matching
-            if (normalized.includes('department') || normalized.includes('unit') || 
-                normalized.includes('dept') || lowerHeader.includes('department/unit')) {
+            if (normalized.includes('department') || normalized.includes('unit') || normalized.includes('dept') || lowerHeader.includes('department/unit')) {
                 departmentMatches.push({ index, score: 10 });
             }
 
@@ -760,8 +747,7 @@ export class TeacherComponent implements OnInit {
             }
 
             // Contact matching
-            if (normalized.includes('contact') || normalized.includes('phone') || 
-                normalized.includes('mobile') || lowerHeader.includes('mobile number')) {
+            if (normalized.includes('contact') || normalized.includes('phone') || normalized.includes('mobile') || lowerHeader.includes('mobile number')) {
                 contactMatches.push({ index, score: 10 });
             }
         });
