@@ -40,6 +40,11 @@ export class AppMenu {
                         routerLink: ['/pages/crud']
                     },
                     {
+                        label: 'Book Borrowing',
+                        icon: 'pi pi-fw pi-book',
+                        routerLink: ['/pages/borrowing']
+                    },
+                    {
                         label: 'Not Found',
                         icon: 'pi pi-fw pi-exclamation-circle',
                         routerLink: ['/pages/notfound']
