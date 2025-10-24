@@ -1,7 +1,7 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, effect } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, catchError, of } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { Observable, catchError, of, interval } from 'rxjs';
+import { map, tap, switchMap } from 'rxjs/operators';
 import { LmsAuthService } from '../../services/lms-auth.service';
 
 export interface AuthUser {
@@ -15,19 +15,159 @@ export interface AuthUser {
     name?: string;
 }
 
+export interface TokenData {
+    token: string;
+    expiresAt: number; // Unix timestamp
+    issuedAt: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
     private lmsAuth = inject(LmsAuthService);
     private router = inject(Router);
+
+    // Token configuration (in minutes)
+    private readonly TOKEN_EXPIRY_TIME = 60; // Token expires after 60 minutes
+    private readonly TOKEN_REFRESH_THRESHOLD = 10; // Refresh token 10 minutes before expiry
+    private readonly REFRESH_CHECK_INTERVAL = 5 * 60 * 1000; // Check every 5 minutes
+
     private readonly tokenKey = 'auth_token';
     private readonly userKey = 'auth_user';
+    private refreshTokenTimeout: any;
+
+    constructor() {
+        // Initialize token validation on service creation
+        this.validateTokenOnStartup();
+        this.setupTokenRefreshTimer();
+    }
+
+    /**
+     * Validate token on app startup
+     */
+    private validateTokenOnStartup(): void {
+        const tokenData = this.getTokenData();
+        if (tokenData) {
+            if (this.isTokenExpired(tokenData)) {
+                console.log('Token expired on startup, logging out');
+                this.logout();
+            } else {
+                console.log('Token valid on startup');
+                this.scheduleTokenRefresh(tokenData);
+            }
+        }
+    }
+
+    /**
+     * Setup automatic token refresh timer
+     */
+    private setupTokenRefreshTimer(): void {
+        interval(this.REFRESH_CHECK_INTERVAL).subscribe(() => {
+            const tokenData = this.getTokenData();
+            if (tokenData && !this.isTokenExpired(tokenData)) {
+                const timeUntilExpiry = (tokenData.expiresAt - Date.now()) / 1000 / 60; // minutes
+                if (timeUntilExpiry <= this.TOKEN_REFRESH_THRESHOLD) {
+                    console.log(`Token expires in ${timeUntilExpiry.toFixed(1)} minutes, refreshing...`);
+                    this.refreshToken();
+                }
+            }
+        });
+    }
+
+    /**
+     * Schedule token refresh before expiry
+     */
+    private scheduleTokenRefresh(tokenData: TokenData): void {
+        // Clear existing timeout
+        if (this.refreshTokenTimeout) {
+            clearTimeout(this.refreshTokenTimeout);
+        }
+
+        const now = Date.now();
+        const expiresAt = tokenData.expiresAt;
+        const refreshTime = expiresAt - this.TOKEN_REFRESH_THRESHOLD * 60 * 1000;
+        const timeUntilRefresh = refreshTime - now;
+
+        if (timeUntilRefresh > 0) {
+            this.refreshTokenTimeout = setTimeout(() => {
+                console.log('Scheduled token refresh triggered');
+                this.refreshToken();
+            }, timeUntilRefresh);
+        }
+    }
+
+    /**
+     * Refresh the token
+     */
+    private refreshToken(): void {
+        const tokenData = this.getTokenData();
+        if (tokenData && !this.isTokenExpired(tokenData)) {
+            const newTokenData = this.generateTokenData();
+            this.saveTokenData(newTokenData);
+            this.scheduleTokenRefresh(newTokenData);
+            console.log('Token refreshed successfully');
+        }
+    }
+
+    /**
+     * Generate new token data with expiry time
+     */
+    private generateTokenData(): TokenData {
+        const now = Date.now();
+        return {
+            token: 'firebase-token-' + Math.random().toString(36).substr(2, 9),
+            issuedAt: now,
+            expiresAt: now + this.TOKEN_EXPIRY_TIME * 60 * 1000 // Expire in X minutes
+        };
+    }
+
+    /**
+     * Save token data to secure storage
+     */
+    private saveTokenData(tokenData: TokenData): void {
+        try {
+            sessionStorage.setItem(this.tokenKey, JSON.stringify(tokenData));
+        } catch (e) {
+            console.error('Error saving token:', e);
+            localStorage.setItem(this.tokenKey, JSON.stringify(tokenData));
+        }
+    }
+
+    /**
+     * Get token data from secure storage
+     */
+    private getTokenData(): TokenData | null {
+        try {
+            let data = sessionStorage.getItem(this.tokenKey);
+            if (!data) {
+                data = localStorage.getItem(this.tokenKey);
+            }
+            return data ? (JSON.parse(data) as TokenData) : null;
+        } catch (e) {
+            console.error('Error retrieving token:', e);
+            return null;
+        }
+    }
+
+    /**
+     * Check if token is expired
+     */
+    private isTokenExpired(tokenData: TokenData): boolean {
+        return Date.now() > tokenData.expiresAt;
+    }
 
     get isLoggedIn(): boolean {
-        return !!localStorage.getItem(this.tokenKey);
+        const tokenData = this.getTokenData();
+        if (!tokenData) return false;
+
+        if (this.isTokenExpired(tokenData)) {
+            this.logout();
+            return false;
+        }
+        return true;
     }
 
     get currentUser(): AuthUser | null {
-        const raw = localStorage.getItem(this.userKey);
+        const raw = sessionStorage.getItem(this.userKey) || localStorage.getItem(this.userKey);
         return raw ? (JSON.parse(raw) as AuthUser) : null;
     }
 
@@ -41,8 +181,7 @@ export class AuthService {
         const pwTrimmed = (password ?? '').trim();
 
         if (!lrnTrimmed || !pwTrimmed) {
-            localStorage.removeItem(this.tokenKey);
-            localStorage.removeItem(this.userKey);
+            this.clearAuthData();
             return of(false);
         }
 
@@ -50,8 +189,10 @@ export class AuthService {
         return this.lmsAuth.loginWithLRN(lrnTrimmed, pwTrimmed).pipe(
             tap((user) => {
                 if (user) {
-                    // Store auth token and user data
-                    localStorage.setItem(this.tokenKey, 'firebase-token');
+                    // Generate and save token with expiry
+                    const tokenData = this.generateTokenData();
+                    this.saveTokenData(tokenData);
+
                     const authUser: AuthUser = {
                         id: user.uid,
                         username: lrnTrimmed,
@@ -60,17 +201,25 @@ export class AuthService {
                         name: user.studentData?.name || user.displayName || '',
                         email: user.email || ''
                     };
-                    localStorage.setItem(this.userKey, JSON.stringify(authUser));
+                    try {
+                        sessionStorage.setItem(this.userKey, JSON.stringify(authUser));
+                    } catch {
+                        localStorage.setItem(this.userKey, JSON.stringify(authUser));
+                    }
+
+                    // Schedule token refresh
+                    this.scheduleTokenRefresh(tokenData);
+
+                    // Navigate to dashboard after successful login
+                    setTimeout(() => this.router.navigate(['/pages/crud']), 300);
                 } else {
-                    localStorage.removeItem(this.tokenKey);
-                    localStorage.removeItem(this.userKey);
+                    this.clearAuthData();
                 }
             }),
             map((user) => !!user),
             catchError((error) => {
                 console.error('Login error:', error);
-                localStorage.removeItem(this.tokenKey);
-                localStorage.removeItem(this.userKey);
+                this.clearAuthData();
                 return of(false);
             })
         );
@@ -84,15 +233,17 @@ export class AuthService {
         const pwTrimmed = (password ?? '').trim();
 
         if (!teacherIDTrimmed || !pwTrimmed) {
-            localStorage.removeItem(this.tokenKey);
-            localStorage.removeItem(this.userKey);
+            this.clearAuthData();
             return of(false);
         }
 
         return this.lmsAuth.loginWithTeacherID(teacherIDTrimmed, pwTrimmed).pipe(
             tap((user) => {
                 if (user) {
-                    localStorage.setItem(this.tokenKey, 'firebase-token');
+                    // Generate and save token with expiry
+                    const tokenData = this.generateTokenData();
+                    this.saveTokenData(tokenData);
+
                     const authUser: AuthUser = {
                         id: user.uid,
                         username: teacherIDTrimmed,
@@ -101,17 +252,25 @@ export class AuthService {
                         name: (user as any).name || user.displayName || '',
                         email: user.email || ''
                     };
-                    localStorage.setItem(this.userKey, JSON.stringify(authUser));
+                    try {
+                        sessionStorage.setItem(this.userKey, JSON.stringify(authUser));
+                    } catch {
+                        localStorage.setItem(this.userKey, JSON.stringify(authUser));
+                    }
+
+                    // Schedule token refresh
+                    this.scheduleTokenRefresh(tokenData);
+
+                    // Navigate to dashboard after successful login
+                    setTimeout(() => this.router.navigate(['/pages/crud']), 300);
                 } else {
-                    localStorage.removeItem(this.tokenKey);
-                    localStorage.removeItem(this.userKey);
+                    this.clearAuthData();
                 }
             }),
             map((user) => !!user),
             catchError((error) => {
                 console.error('Login error:', error);
-                localStorage.removeItem(this.tokenKey);
-                localStorage.removeItem(this.userKey);
+                this.clearAuthData();
                 return of(false);
             })
         );
@@ -125,15 +284,17 @@ export class AuthService {
         const pwTrimmed = (password ?? '').trim();
 
         if (!emailTrimmed || !pwTrimmed) {
-            localStorage.removeItem(this.tokenKey);
-            localStorage.removeItem(this.userKey);
+            this.clearAuthData();
             return of(false);
         }
 
         return this.lmsAuth.loginWithEmail(emailTrimmed, pwTrimmed).pipe(
             tap((user) => {
                 if (user) {
-                    localStorage.setItem(this.tokenKey, 'firebase-token');
+                    // Generate and save token with expiry
+                    const tokenData = this.generateTokenData();
+                    this.saveTokenData(tokenData);
+
                     const authUser: AuthUser = {
                         id: user.uid,
                         username: emailTrimmed,
@@ -141,27 +302,50 @@ export class AuthService {
                         role: user.role || 'admin',
                         name: user.displayName || ''
                     };
-                    localStorage.setItem(this.userKey, JSON.stringify(authUser));
+                    try {
+                        sessionStorage.setItem(this.userKey, JSON.stringify(authUser));
+                    } catch {
+                        localStorage.setItem(this.userKey, JSON.stringify(authUser));
+                    }
+
+                    // Schedule token refresh
+                    this.scheduleTokenRefresh(tokenData);
+
+                    // Navigate to dashboard after successful login
+                    setTimeout(() => this.router.navigate(['/pages/crud']), 300);
                 } else {
-                    localStorage.removeItem(this.tokenKey);
-                    localStorage.removeItem(this.userKey);
+                    this.clearAuthData();
                 }
             }),
             map((user) => !!user),
             catchError((error) => {
                 console.error('Login error:', error);
-                localStorage.removeItem(this.tokenKey);
-                localStorage.removeItem(this.userKey);
+                this.clearAuthData();
                 return of(false);
             })
         );
     }
 
+    /**
+     * Logout and clear all auth data
+     */
     logout(): void {
+        if (this.refreshTokenTimeout) {
+            clearTimeout(this.refreshTokenTimeout);
+        }
         this.lmsAuth.logout().subscribe(() => {
-            localStorage.removeItem(this.tokenKey);
-            localStorage.removeItem(this.userKey);
+            this.clearAuthData();
             this.router.navigate(['/auth/login']);
         });
+    }
+
+    /**
+     * Clear all authentication data
+     */
+    private clearAuthData(): void {
+        sessionStorage.removeItem(this.tokenKey);
+        localStorage.removeItem(this.tokenKey);
+        sessionStorage.removeItem(this.userKey);
+        localStorage.removeItem(this.userKey);
     }
 }

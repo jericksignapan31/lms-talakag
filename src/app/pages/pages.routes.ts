@@ -6,9 +6,11 @@ import { Students } from './students/students';
 import { BorrowingComponent } from './borrowing/borrowing';
 import { TeacherComponent } from './teacher/teacher';
 import { AdminComponent } from './admin/admin';
+import { Dashboard } from './dashboard/dashboard';
 import { RoleGuard } from './auth/role.guard';
 
 export default [
+    { path: 'dashboard', component: Dashboard },
     { path: 'documentation', component: Documentation },
     { path: 'crud', component: Crud, canActivate: [RoleGuard], data: { permission: 'canAccessBooks' } },
     { path: 'borrowing', component: BorrowingComponent, canActivate: [RoleGuard], data: { permission: 'canAccessBorrowing' } },
