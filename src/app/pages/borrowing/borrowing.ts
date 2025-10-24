@@ -80,7 +80,7 @@ import { AuthService } from '../auth/auth.service';
                         <th style="min-width: 10rem">Due Date</th>
                         <th style="min-width: 10rem">Return Date</th>
                         <th style="min-width: 8rem">Status</th>
-                        <th style="min-width: 12rem">Actions</th>
+                        <th style="min-width: 12rem" *ngIf="isAdmin()">Actions</th>
                     </tr>
                 </ng-template>
 
@@ -94,7 +94,7 @@ import { AuthService } from '../auth/auth.service';
                         <td style="min-width: 8rem">
                             <p-tag [value]="borrowing.status | titlecase" [severity]="getStatusSeverity(borrowing.status)" />
                         </td>
-                        <td style="min-width: 12rem">
+                        <td style="min-width: 12rem" *ngIf="isAdmin()">
                             <p-button *ngIf="borrowing.status !== 'returned'" icon="pi pi-check" class="mr-2" severity="success" [rounded]="true" [outlined]="true" pTooltip="Return Book" tooltipPosition="top" (click)="returnBook(borrowing)" />
                             <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true" pTooltip="Delete" tooltipPosition="top" (click)="deleteBorrowing(borrowing)" />
                         </td>
@@ -167,29 +167,28 @@ import { AuthService } from '../auth/auth.service';
             <ng-template #content>
                 <div class="flex flex-col gap-4">
                     <!-- Borrower Type - Only for Admin -->
-                    <div *ngIf="canChangeBorrowerType()">
+                    <div *ngIf="isAdmin()">
                         <label for="borrowerType" class="block font-bold mb-2">Borrower Type *</label>
                         <p-select [(ngModel)]="borrowerType" [options]="borrowerTypeOptions" optionLabel="label" optionValue="value" placeholder="Select Borrower Type" fluid id="borrowerType" />
                         <small class="text-red-500" *ngIf="submitted && !borrowerType">Borrower type is required.</small>
                     </div>
 
-                    <!-- For Teacher/Student: Show who will borrow -->
-                    <div *ngIf="!canChangeBorrowerType()">
+                    <!-- For Student: Show auto-assigned borrower -->
+                    <div *ngIf="isStudent()">
                         <label class="block font-bold mb-2">Borrower</label>
-                        <p-select
-                            [(ngModel)]="selectedBorrowerLRN"
-                            [options]="borrowerType === 'student' ? students() : teachers()"
-                            [optionLabel]="'name'"
-                            [optionValue]="borrowerType === 'student' ? 'lrn' : 'teacherID'"
-                            placeholder="Select"
-                            fluid
-                            [disabled]="true"
-                        />
+                        <p-select [(ngModel)]="selectedBorrowerLRN" [options]="students()" [optionLabel]="'name'" optionValue="lrn" placeholder="Select" fluid [disabled]="true" />
+                        <small class="text-gray-500">You are automatically set as the borrower</small>
+                    </div>
+
+                    <!-- For Teacher: Show auto-assigned teacher borrower (no borrower type selection) -->
+                    <div *ngIf="isTeacher()">
+                        <label class="block font-bold mb-2">Teacher Borrower</label>
+                        <p-select [(ngModel)]="selectedBorrowerLRN" [options]="teachers()" [optionLabel]="'name'" optionValue="teacherID" placeholder="Select" fluid [disabled]="true" />
                         <small class="text-gray-500">You are automatically set as the borrower</small>
                     </div>
 
                     <!-- Borrower Selection - Only for Admin -->
-                    <div *ngIf="canChangeBorrowerType()">
+                    <div *ngIf="isAdmin()">
                         <label for="borrower" class="block font-bold mb-2">{{ borrowerType === 'student' ? 'Student' : 'Teacher' }} *</label>
                         <p-select
                             [(ngModel)]="selectedBorrowerLRN"
