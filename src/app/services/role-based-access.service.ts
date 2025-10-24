@@ -82,12 +82,12 @@ export class RoleBasedAccessService {
                 canAccessAdminUsers: false,
                 canAccessBooks: true,
                 canAccessBorrowing: true,
-                canAccessBorrowingManagement: true,
+                canAccessBorrowingManagement: false,
                 canAccessPenalties: true,
-                canChangeBorrowerType: true,
-                canFilterBorrowings: true,
-                canFilterPenalties: true,
-                canAccessAllData: true
+                canChangeBorrowerType: false,
+                canFilterBorrowings: false,
+                canFilterPenalties: false,
+                canAccessAllData: false
             },
             student: {
                 canAccessStudentUsers: false,
@@ -95,12 +95,12 @@ export class RoleBasedAccessService {
                 canAccessAdminUsers: false,
                 canAccessBooks: true,
                 canAccessBorrowing: true,
-                canAccessBorrowingManagement: true,
-                canAccessPenalties: true,
-                canChangeBorrowerType: true,
-                canFilterBorrowings: true,
-                canFilterPenalties: true,
-                canAccessAllData: true
+                canAccessBorrowingManagement: false,
+                canAccessPenalties: false,
+                canChangeBorrowerType: false,
+                canFilterBorrowings: false,
+                canFilterPenalties: false,
+                canAccessAllData: false
             }
         };
 

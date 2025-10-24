@@ -9,7 +9,7 @@ import { MessageService } from 'primeng/api';
 export class RoleGuard implements CanActivate {
     private rbacService = inject(RoleBasedAccessService);
     private router = inject(Router);
-    private messageService = inject(MessageService);
+    private messageService = inject(MessageService, { optional: true });
 
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
         const requiredRole = route.data['role'] as string | undefined;
@@ -24,11 +24,13 @@ export class RoleGuard implements CanActivate {
         if (requiredRole) {
             const currentRole = this.rbacService.getRoleValue();
             if (currentRole !== requiredRole && !(requiredRole === 'admin' && currentRole === 'super-admin')) {
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Access Denied',
-                    detail: `You don't have permission to access this page. Required role: ${requiredRole}`
-                });
+                if (this.messageService) {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Access Denied',
+                        detail: `You don't have permission to access this page. Required role: ${requiredRole}`
+                    });
+                }
                 this.router.navigate(['/']);
                 return false;
             }
@@ -38,11 +40,13 @@ export class RoleGuard implements CanActivate {
         if (requiredPermission) {
             const hasPermission = this.rbacService.canAccess(requiredPermission as any);
             if (!hasPermission) {
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Access Denied',
-                    detail: "You don't have permission to access this page."
-                });
+                if (this.messageService) {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Access Denied',
+                        detail: "You don't have permission to access this page."
+                    });
+                }
                 this.router.navigate(['/']);
                 return false;
             }

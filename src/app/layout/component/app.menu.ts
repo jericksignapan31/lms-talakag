@@ -10,14 +10,14 @@ import { RoleBasedAccessService } from '../../services/role-based-access.service
     standalone: true,
     imports: [CommonModule, AppMenuitem, RouterModule],
     template: `<ul class="layout-menu">
-        <ng-container *ngFor="let item of filteredModel(); let i = index">
-            <ng-container *ngIf="!item.separator">
+        @for (item of filteredModel(); let i = $index; track i) {
+            @if (!item.separator) {
                 <li app-menuitem [item]="item" [index]="i" [root]="true"></li>
-            </ng-container>
-            <ng-container *ngIf="item.separator">
+            }
+            @if (item.separator) {
                 <li class="menu-separator"></li>
-            </ng-container>
-        </ng-container>
+            }
+        }
     </ul> `
 })
 export class AppMenu implements OnInit {
@@ -27,6 +27,10 @@ export class AppMenu implements OnInit {
     // Filter menu based on role
     filteredModel = computed(() => {
         const perms = this.rbacService.getCurrentPermissions();
+        const role = this.rbacService.getCurrentRole();
+
+        console.log('Current Role:', role);
+        console.log('Current Permissions:', perms);
 
         // Build filtered Pages submenu
         const pagesItems: MenuItem[] = [];
@@ -76,16 +80,17 @@ export class AppMenu implements OnInit {
             });
         }
 
+        console.log('Pages Items:', pagesItems);
+
         // Return filtered model
         return [
             {
                 label: 'Home',
-                items: [{ label: 'Dashboard', icon: 'pi pi-fw pi-home', routerLink: [] }]
+                items: [{ label: 'Dashboard', icon: 'pi pi-fw pi-home', routerLink: ['/'] }]
             },
             {
                 label: 'Pages',
                 icon: 'pi pi-fw pi-briefcase',
-                routerLink: ['/pages'],
                 items: pagesItems
             }
         ] as MenuItem[];
