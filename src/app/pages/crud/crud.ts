@@ -689,19 +689,35 @@ export class Crud implements OnInit {
 
             if (importedBooks.length > 0) {
                 // Save each imported book to Firestore
+                let successCount = 0;
+                let failureCount = 0;
+
                 for (const book of importedBooks) {
                     try {
                         await this.bookService.addBook(book);
+                        successCount++;
                     } catch (error) {
                         console.error('Error saving imported book:', error);
+                        failureCount++;
                     }
                 }
+
+                // Reload books from Firestore to display the imported data
                 await this.loadBooksFromFirestore();
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Success',
-                    detail: `Successfully imported ${importedBooks.length} books from ${file.name}`
-                });
+
+                if (failureCount === 0) {
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Success',
+                        detail: `Successfully imported ${successCount} books from ${file.name}`
+                    });
+                } else {
+                    this.messageService.add({
+                        severity: 'warn',
+                        summary: 'Import Completed',
+                        detail: `Imported ${successCount} books successfully, ${failureCount} failed from ${file.name}`
+                    });
+                }
             } else {
                 this.messageService.add({
                     severity: 'warn',
