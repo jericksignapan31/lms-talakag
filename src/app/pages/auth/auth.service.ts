@@ -160,7 +160,8 @@ export class AuthService {
         if (!tokenData) return false;
 
         if (this.isTokenExpired(tokenData)) {
-            this.logout();
+            // Don't call async logout here - just clear data synchronously
+            this.clearAuthData();
             return false;
         }
         return true;
@@ -329,13 +330,56 @@ export class AuthService {
     /**
      * Logout and clear all auth data
      */
-    logout(): void {
-        if (this.refreshTokenTimeout) {
-            clearTimeout(this.refreshTokenTimeout);
-        }
-        this.lmsAuth.logout().subscribe(() => {
-            this.clearAuthData();
-            this.router.navigate(['/auth/login']);
+    logout(): Observable<void> {
+        return new Observable((observer) => {
+            try {
+                // Stop any pending token refresh
+                if (this.refreshTokenTimeout) {
+                    clearTimeout(this.refreshTokenTimeout);
+                }
+
+                // Step 1: Clear auth data immediately and synchronously
+                this.clearAuthData();
+
+                // Step 2: Force remove all auth-related keys from sessionStorage
+                for (let i = sessionStorage.length - 1; i >= 0; i--) {
+                    const key = sessionStorage.key(i);
+                    if (key && (key.includes('auth') || key.includes('token') || key.includes('user'))) {
+                        sessionStorage.removeItem(key);
+                    }
+                }
+
+                // Step 3: Force remove all auth-related keys from localStorage
+                for (let i = localStorage.length - 1; i >= 0; i--) {
+                    const key = localStorage.key(i);
+                    if (key && (key.includes('auth') || key.includes('token') || key.includes('user'))) {
+                        localStorage.removeItem(key);
+                    }
+                }
+
+                // Step 4: Clear browser history
+                window.history.pushState(null, '', window.location.href);
+                window.onpopstate = () => {
+                    window.history.pushState(null, '', window.location.href);
+                };
+
+                // Step 5: Call Firebase logout (but don't wait for it to fail)
+                this.lmsAuth.logout().subscribe(
+                    () => {
+                        observer.next();
+                        observer.complete();
+                    },
+                    (error) => {
+                        console.error('Firebase logout error:', error);
+                        observer.next();
+                        observer.complete();
+                    }
+                );
+            } catch (error) {
+                console.error('Logout error:', error);
+                observer.next();
+                observer.complete();
+            }
         });
     }
 

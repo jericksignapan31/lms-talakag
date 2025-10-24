@@ -10,13 +10,13 @@ import { Dashboard } from './dashboard/dashboard';
 import { RoleGuard } from './auth/role.guard';
 
 export default [
-    { path: 'dashboard', component: Dashboard },
-    { path: 'documentation', component: Documentation },
+    { path: 'dashboard', component: Dashboard, canActivate: [RoleGuard] },
+    { path: 'documentation', component: Documentation, canActivate: [RoleGuard] },
     { path: 'crud', component: Crud, canActivate: [RoleGuard], data: { permission: 'canAccessBooks' } },
     { path: 'borrowing', component: BorrowingComponent, canActivate: [RoleGuard], data: { permission: 'canAccessBorrowing' } },
     { path: 'teacher', component: TeacherComponent, canActivate: [RoleGuard], data: { permission: 'canAccessTeacherUsers' } },
     { path: 'admin', component: AdminComponent, canActivate: [RoleGuard], data: { permission: 'canAccessAdminUsers' } },
-    { path: 'empty', component: Empty },
+    { path: 'empty', component: Empty, canActivate: [RoleGuard] },
     { path: 'users', component: Students, canActivate: [RoleGuard], data: { permission: 'canAccessStudentUsers' } },
     { path: '**', redirectTo: '/notfound' }
 ] as Routes;

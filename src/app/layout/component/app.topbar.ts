@@ -132,10 +132,13 @@ export class AppTopbar {
         this.authService.logout().subscribe(
             () => {
                 this.currentUserName = 'User';
-                this.router.navigate(['/auth/login']);
+                // Navigate to login with replaceUrl to clear history
+                this.router.navigate(['/auth/login'], { replaceUrl: true });
             },
             (error) => {
                 console.error('Logout error:', error);
+                // Still redirect to login even if logout fails
+                this.router.navigate(['/auth/login'], { replaceUrl: true });
             }
         );
     }

@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router } from '@angular/router';
 import { RoleBasedAccessService } from '../../services/role-based-access.service';
+import { AuthService } from './auth.service';
 import { MessageService } from 'primeng/api';
 
 @Injectable({
@@ -8,10 +9,18 @@ import { MessageService } from 'primeng/api';
 })
 export class RoleGuard implements CanActivate {
     private rbacService = inject(RoleBasedAccessService);
+    private authService = inject(AuthService);
     private router = inject(Router);
     private messageService = inject(MessageService, { optional: true });
 
     canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
+        // First check if user is actually logged in
+        if (!this.authService.isLoggedIn) {
+            console.log('User not logged in, redirecting to login');
+            this.router.navigate(['/auth/login'], { replaceUrl: true });
+            return false;
+        }
+
         const requiredRole = route.data['role'] as string | undefined;
         const requiredPermission = route.data['permission'] as string | undefined;
 
@@ -31,7 +40,7 @@ export class RoleGuard implements CanActivate {
                         detail: `You don't have permission to access this page. Required role: ${requiredRole}`
                     });
                 }
-                this.router.navigate(['/']);
+                this.router.navigate(['/'], { replaceUrl: true });
                 return false;
             }
         }
@@ -47,7 +56,7 @@ export class RoleGuard implements CanActivate {
                         detail: "You don't have permission to access this page."
                     });
                 }
-                this.router.navigate(['/']);
+                this.router.navigate(['/'], { replaceUrl: true });
                 return false;
             }
         }
