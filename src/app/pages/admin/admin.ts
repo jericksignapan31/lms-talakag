@@ -85,11 +85,14 @@ import { FirestoreAdminService, Admin } from '../../services/firestore-admin.ser
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Admin ID</label>
-                    <input pInputText [(ngModel)]="adminForm.adminID" class="w-full" placeholder="Unique admin ID" />
+                    <div class="flex gap-2">
+                        <input pInputText [(ngModel)]="adminForm.adminID" class="w-full" placeholder="Auto-generated" [readOnly]="!editingAdmin()" [ngClass]="{ 'bg-gray-100': !editingAdmin() }" />
+                        <button *ngIf="!editingAdmin()" pButton type="button" (click)="generateNewAdminID()" label="Generate" class="p-button-info p-button-sm"></button>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Department</label>
-                    <input pInputText [(ngModel)]="adminForm.department" class="w-full" placeholder="Department" />
+                    <p-select [(ngModel)]="adminForm.department" [options]="departmentOptions" optionLabel="label" optionValue="value" class="w-full" placeholder="Select Department"></p-select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
@@ -150,6 +153,18 @@ export class AdminComponent implements OnInit, OnDestroy {
         { label: 'Inactive', value: 'inactive' }
     ];
 
+    departmentOptions = [
+        { label: 'Administration', value: 'Administration' },
+        { label: 'IT Department', value: 'IT Department' },
+        { label: 'Finance', value: 'Finance' },
+        { label: 'Human Resources', value: 'Human Resources' },
+        { label: 'Academic Affairs', value: 'Academic Affairs' },
+        { label: 'Student Services', value: 'Student Services' },
+        { label: 'Library', value: 'Library' },
+        { label: 'Facilities', value: 'Facilities' },
+        { label: 'Other', value: 'Other' }
+    ];
+
     constructor(
         private adminService: FirestoreAdminService,
         private messageService: MessageService,
@@ -191,6 +206,20 @@ export class AdminComponent implements OnInit, OnDestroy {
         };
         this.editingAdmin.set(null);
         this.displayDialog.set(true);
+
+        // Auto-generate Admin ID when opening new admin dialog
+        this.generateNewAdminID();
+    }
+
+    async generateNewAdminID() {
+        try {
+            const newAdminID = await this.adminService.generateAdminID();
+            this.adminForm.adminID = newAdminID;
+            this.messageService.add({ severity: 'info', summary: 'Info', detail: `Admin ID generated: ${newAdminID}` });
+        } catch (error: any) {
+            console.error('Error generating Admin ID:', error);
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to generate Admin ID' });
+        }
     }
 
     editAdmin(admin: Admin) {

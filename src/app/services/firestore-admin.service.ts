@@ -163,6 +163,36 @@ export class FirestoreAdminService {
     }
 
     /**
+     * Auto-generate Admin ID in format ADM-001, ADM-002, etc.
+     */
+    async generateAdminID(): Promise<string> {
+        try {
+            // Get all admins
+            const allAdmins = await this.getAdmins();
+
+            // Extract numeric parts from existing admin IDs
+            const existingNumbers: number[] = [];
+            allAdmins.forEach((admin) => {
+                const match = admin.adminID?.match(/ADM-(\d+)/);
+                if (match) {
+                    existingNumbers.push(parseInt(match[1], 10));
+                }
+            });
+
+            // Find the next number
+            const nextNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
+
+            // Format as ADM-001, ADM-002, etc.
+            const newAdminID = `ADM-${String(nextNumber).padStart(3, '0')}`;
+            console.log(`Generated new Admin ID: ${newAdminID}`);
+            return newAdminID;
+        } catch (error) {
+            console.error('Error generating admin ID:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Create an admin account in Firebase Authentication
      * and add to Firestore admins collection
      */
