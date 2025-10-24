@@ -16,6 +16,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TagModule } from 'primeng/tag';
 import { FirestoreBorrowingService, Borrowing, Penalty } from '../../services/firestore-borrowing.service';
 import { FirestoreStudentService, Student } from '../../services/firestore-student.service';
+import { FirestoreTeacherService, Teacher } from '../../services/firestore-teacher.service';
 import { FirestoreBookService, Book } from '../../services/firestore-book.service';
 
 @Component({
@@ -39,7 +40,7 @@ import { FirestoreBookService, Book } from '../../services/firestore-book.servic
             <h3 class="text-xl font-bold mb-4">📚 Borrowed Books</h3>
             <p-table
                 #borrowingTable
-                [value]="borrowings()"
+                [value]="borrowingsFiltered()"
                 [rows]="10"
                 [paginator]="true"
                 [globalFilterFields]="['studentName', 'bookTitle', 'status']"
@@ -53,8 +54,12 @@ import { FirestoreBookService, Book } from '../../services/firestore-book.servic
                 scrollHeight="flex"
             >
                 <ng-template #caption>
-                    <div class="flex items-center justify-between">
-                        <h5 class="m-0">Borrowing Management</h5>
+                    <div class="flex items-center justify-between gap-4 flex-wrap">
+                        <div class="flex items-center gap-4">
+                            <h5 class="m-0">Borrowing Management</h5>
+                            <p-select [(ngModel)]="filterBorrowerType" [options]="borrowerFilterOptions" optionLabel="label" optionValue="value" placeholder="Filter by type" (onChange)="applyBorrowerFilter()" [showClear]="true" styleClass="w-40" />
+                            <p-button label="Clear Filters" icon="pi pi-times" severity="secondary" size="small" text (onClick)="clearBorrowerFilters()" />
+                        </div>
                         <p-iconfield>
                             <p-inputicon styleClass="pi pi-search" />
                             <input pInputText type="text" (input)="onGlobalFilter(borrowingTable, $event)" placeholder="Search..." />
@@ -157,9 +162,24 @@ import { FirestoreBookService, Book } from '../../services/firestore-book.servic
             <ng-template #content>
                 <div class="flex flex-col gap-4">
                     <div>
-                        <label for="student" class="block font-bold mb-2">Student *</label>
-                        <p-select [(ngModel)]="selectedStudentLRN" [options]="students()" optionLabel="name" optionValue="lrn" placeholder="Select Student" filter fluid id="student" />
-                        <small class="text-red-500" *ngIf="submitted && !selectedStudentLRN">Student is required.</small>
+                        <label for="borrowerType" class="block font-bold mb-2">Borrower Type *</label>
+                        <p-select [(ngModel)]="borrowerType" [options]="borrowerTypeOptions" optionLabel="label" optionValue="value" placeholder="Select Borrower Type" fluid id="borrowerType" />
+                        <small class="text-red-500" *ngIf="submitted && !borrowerType">Borrower type is required.</small>
+                    </div>
+
+                    <div>
+                        <label for="borrower" class="block font-bold mb-2">{{ borrowerType === 'student' ? 'Student' : 'Teacher' }} *</label>
+                        <p-select
+                            [(ngModel)]="selectedBorrowerLRN"
+                            [options]="borrowerType === 'student' ? students() : teachers()"
+                            [optionLabel]="borrowerType === 'student' ? 'name' : 'name'"
+                            [optionValue]="borrowerType === 'student' ? 'lrn' : 'teacherID'"
+                            placeholder="Select {{ borrowerType === 'student' ? 'Student' : 'Teacher' }}"
+                            filter
+                            fluid
+                            id="borrower"
+                        />
+                        <small class="text-red-500" *ngIf="submitted && !selectedBorrowerLRN">{{ borrowerType === 'student' ? 'Student' : 'Teacher' }} is required.</small>
                     </div>
 
                     <div>
@@ -190,11 +210,26 @@ export class BorrowingComponent implements OnInit {
     submitted: boolean = false;
 
     borrowings = signal<Borrowing[]>([]);
+    borrowingsFiltered = signal<Borrowing[]>([]);
     penalties = signal<Penalty[]>([]);
     students = signal<Student[]>([]);
+    teachers = signal<Teacher[]>([]);
     books = signal<Book[]>([]);
 
-    selectedStudentLRN: string | null = null;
+    borrowerType: string | null = null;
+    borrowerTypeOptions = [
+        { label: 'Student', value: 'student' },
+        { label: 'Teacher', value: 'teacher' }
+    ];
+
+    filterBorrowerType: string | null = null;
+    borrowerFilterOptions = [
+        { label: 'All', value: null },
+        { label: '👤 Students', value: 'student' },
+        { label: '👨‍🏫 Teachers', value: 'teacher' }
+    ];
+
+    selectedBorrowerLRN: string | null = null;
     selectedBookAccessionNumber: string | null = null;
     borrowDate: string = '';
 
@@ -203,6 +238,7 @@ export class BorrowingComponent implements OnInit {
 
     private borrowingService = inject(FirestoreBorrowingService);
     private studentService = inject(FirestoreStudentService);
+    private teacherService = inject(FirestoreTeacherService);
     private bookService = inject(FirestoreBookService);
     private messageService = inject(MessageService);
     private confirmationService = inject(ConfirmationService);
@@ -210,6 +246,7 @@ export class BorrowingComponent implements OnInit {
     ngOnInit() {
         this.loadBorrowings();
         this.loadStudents();
+        this.loadTeachers();
         this.loadBooks();
         this.loadPenalties();
     }
@@ -218,6 +255,8 @@ export class BorrowingComponent implements OnInit {
         try {
             const borrowingsData = await this.borrowingService.getBorrowings();
             this.borrowings.set(borrowingsData);
+            this.borrowingsFiltered.set(borrowingsData);
+            this.applyBorrowerFilter();
         } catch (error) {
             this.messageService.add({
                 severity: 'error',
@@ -251,6 +290,15 @@ export class BorrowingComponent implements OnInit {
         }
     }
 
+    async loadTeachers() {
+        try {
+            const teachersData = await this.teacherService.getTeachers();
+            this.teachers.set(teachersData);
+        } catch (error) {
+            console.error('Error loading teachers:', error);
+        }
+    }
+
     async loadBooks() {
         try {
             const booksData = await this.bookService.getBooks();
@@ -262,7 +310,8 @@ export class BorrowingComponent implements OnInit {
 
     openBorrowDialog() {
         this.borrowDate = new Date().toISOString().split('T')[0];
-        this.selectedStudentLRN = null;
+        this.borrowerType = null;
+        this.selectedBorrowerLRN = null;
         this.selectedBookAccessionNumber = null;
         this.submitted = false;
         this.borrowDialog = true;
@@ -276,19 +325,47 @@ export class BorrowingComponent implements OnInit {
     async saveBorrowing() {
         this.submitted = true;
 
-        if (!this.selectedStudentLRN || !this.selectedBookAccessionNumber) {
+        if (!this.borrowerType || !this.selectedBorrowerLRN || !this.selectedBookAccessionNumber) {
             return;
         }
 
         try {
-            const student = this.students().find((s) => s.lrn === this.selectedStudentLRN);
+            let borrowerName = '';
+            let borrowerLRN = this.selectedBorrowerLRN;
+
+            if (this.borrowerType === 'student') {
+                const student = this.students().find((s) => s.lrn === this.selectedBorrowerLRN);
+                if (!student) {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'Student not found'
+                    });
+                    return;
+                }
+                borrowerName = student.name;
+                borrowerLRN = student.lrn;
+            } else {
+                const teacher = this.teachers().find((t) => t.teacherID === this.selectedBorrowerLRN);
+                if (!teacher) {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'Teacher not found'
+                    });
+                    return;
+                }
+                borrowerName = teacher.name;
+                borrowerLRN = teacher.teacherID;
+            }
+
             const book = this.books().find((b) => b.accessionNumber === this.selectedBookAccessionNumber);
 
-            if (!student || !book) {
+            if (!book) {
                 this.messageService.add({
                     severity: 'error',
                     summary: 'Error',
-                    detail: 'Student or Book not found'
+                    detail: 'Book not found'
                 });
                 return;
             }
@@ -314,8 +391,8 @@ export class BorrowingComponent implements OnInit {
             const dueDate = new Date(borrowDateObj.getTime() + 14 * 24 * 60 * 60 * 1000);
 
             const borrowing: Borrowing = {
-                studentLRN: student.lrn,
-                studentName: student.name,
+                studentLRN: borrowerLRN,
+                studentName: `${borrowerName} (${this.borrowerType === 'student' ? '👤 Student' : '👨‍🏫 Teacher'})`,
                 bookAccessionNumber: book.accessionNumber,
                 bookTitle: book.title,
                 bookISBN: book.isbn,
@@ -519,6 +596,24 @@ export class BorrowingComponent implements OnInit {
 
     getPenaltySeverity(status: string): string {
         return status === 'paid' ? 'success' : 'danger';
+    }
+
+    applyBorrowerFilter() {
+        if (!this.filterBorrowerType) {
+            // Show all borrowings
+            this.borrowingsFiltered.set(this.borrowings());
+        } else if (this.filterBorrowerType === 'student') {
+            // Filter to show only student borrowings (name includes "Student")
+            this.borrowingsFiltered.set(this.borrowings().filter((b) => b.studentName && b.studentName.includes('(👤 Student)')));
+        } else if (this.filterBorrowerType === 'teacher') {
+            // Filter to show only teacher borrowings (name includes "Teacher")
+            this.borrowingsFiltered.set(this.borrowings().filter((b) => b.studentName && b.studentName.includes('(👨‍🏫 Teacher)')));
+        }
+    }
+
+    clearBorrowerFilters() {
+        this.filterBorrowerType = null;
+        this.borrowingsFiltered.set(this.borrowings());
     }
 
     onGlobalFilter(table: Table, event: Event) {
