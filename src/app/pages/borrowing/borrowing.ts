@@ -293,6 +293,30 @@ export class BorrowingComponent implements OnInit {
                 return;
             }
 
+            // CHECK IF BOOK IS ALREADY BORROWED
+            const isBookAlreadyBorrowed = this.borrowings().some(
+                (borrowing) => 
+                    borrowing.bookAccessionNumber === this.selectedBookAccessionNumber && 
+                    (borrowing.status === 'borrowed' || borrowing.status === 'overdue')
+            );
+
+            if (isBookAlreadyBorrowed) {
+                // Find the borrowing record to show who has it
+                const currentBorrowing = this.borrowings().find(
+                    (borrowing) => 
+                        borrowing.bookAccessionNumber === this.selectedBookAccessionNumber && 
+                        (borrowing.status === 'borrowed' || borrowing.status === 'overdue')
+                );
+
+                this.messageService.add({
+                    severity: 'error',
+                    summary: '❌ Book Already Borrowed',
+                    detail: `This book is currently borrowed by: ${currentBorrowing?.studentName} (Due: ${currentBorrowing?.dueDate})`,
+                    sticky: true
+                });
+                return;
+            }
+
             // Calculate due date (2 weeks from borrow date)
             const borrowDateObj = new Date(this.borrowDate);
             const dueDate = new Date(borrowDateObj.getTime() + 14 * 24 * 60 * 60 * 1000);

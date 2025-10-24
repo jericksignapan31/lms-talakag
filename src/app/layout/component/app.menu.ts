@@ -35,8 +35,8 @@ export class AppMenu {
                 routerLink: ['/pages'],
                 items: [
                     {
-                        label: 'Crud',
-                        icon: 'pi pi-fw pi-pencil',
+                        label: 'Books',
+                        icon: 'pi pi-fw pi-address-book',
                         routerLink: ['/pages/crud']
                     },
                     {
@@ -45,19 +45,14 @@ export class AppMenu {
                         routerLink: ['/pages/borrowing']
                     },
                     {
-                        label: 'Not Found',
-                        icon: 'pi pi-fw pi-exclamation-circle',
-                        routerLink: ['/pages/notfound']
-                    },
-                    {
-                        label: 'Empty',
-                        icon: 'pi pi-fw pi-circle-off',
-                        routerLink: ['/pages/empty']
-                    },
-                    {
                         label: 'Student Users',
                         icon: 'pi pi-fw pi-users',
                         routerLink: ['/pages/users']
+                    },
+                    {
+                        label: 'Teacher Users',
+                        icon: 'pi pi-fw pi-id-card',
+                        routerLink: ['/pages/teacher']
                     }
                 ]
             }
