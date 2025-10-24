@@ -167,46 +167,60 @@ import { AuthService } from '../auth/auth.service';
             <ng-template #content>
                 <div class="flex flex-col gap-4">
                     <!-- Borrower Type - Only for Admin -->
-                    <div *ngIf="isAdmin()">
-                        <label for="borrowerType" class="block font-bold mb-2">Borrower Type *</label>
-                        <p-select [(ngModel)]="borrowerType" [options]="borrowerTypeOptions" optionLabel="label" optionValue="value" placeholder="Select Borrower Type" fluid id="borrowerType" />
-                        <small class="text-red-500" *ngIf="submitted && !borrowerType">Borrower type is required.</small>
-                    </div>
+                    @if (isAdmin()) {
+                        <div>
+                            <label for="borrowerType" class="block font-bold mb-2">Borrower Type *</label>
+                            <p-select [(ngModel)]="borrowerType" [options]="borrowerTypeOptions" optionLabel="label" optionValue="value" placeholder="Select Borrower Type" fluid id="borrowerType" />
+                            @if (submitted && !borrowerType) {
+                                <small class="text-red-500">Borrower type is required.</small>
+                            }
+                        </div>
+                    }
 
                     <!-- For Student: Show auto-assigned borrower -->
-                    <div *ngIf="isStudent()">
-                        <label class="block font-bold mb-2">Borrower</label>
-                        <p-select [(ngModel)]="selectedBorrowerLRN" [options]="students()" [optionLabel]="'name'" optionValue="lrn" placeholder="Select" fluid [disabled]="true" />
-                        <small class="text-gray-500">You are automatically set as the borrower</small>
-                    </div>
+                    @if (isStudent()) {
+                        <div>
+                            <label class="block font-bold mb-2">Your Name (Borrower)</label>
+                            <input pInputText type="text" [value]="currentUserName()" disabled fluid />
+                            <small class="text-gray-500">You are automatically set as the borrower</small>
+                        </div>
+                    }
 
                     <!-- For Teacher: Show auto-assigned teacher borrower (no borrower type selection) -->
-                    <div *ngIf="isTeacher()">
-                        <label class="block font-bold mb-2">Teacher Borrower</label>
-                        <p-select [(ngModel)]="selectedBorrowerLRN" [options]="teachers()" [optionLabel]="'name'" optionValue="teacherID" placeholder="Select" fluid [disabled]="true" />
-                        <small class="text-gray-500">You are automatically set as the borrower</small>
-                    </div>
+                    @if (isTeacher()) {
+                        <div>
+                            <label class="block font-bold mb-2">Your Name (Borrower)</label>
+                            <input pInputText type="text" [value]="currentUserName()" disabled fluid />
+                            <small class="text-gray-500">You are automatically set as the borrower</small>
+                        </div>
+                    }
 
                     <!-- Borrower Selection - Only for Admin -->
-                    <div *ngIf="isAdmin()">
-                        <label for="borrower" class="block font-bold mb-2">{{ borrowerType === 'student' ? 'Student' : 'Teacher' }} *</label>
-                        <p-select
-                            [(ngModel)]="selectedBorrowerLRN"
-                            [options]="borrowerType === 'student' ? students() : teachers()"
-                            [optionLabel]="borrowerType === 'student' ? 'name' : 'name'"
-                            [optionValue]="borrowerType === 'student' ? 'lrn' : 'teacherID'"
-                            placeholder="Select {{ borrowerType === 'student' ? 'Student' : 'Teacher' }}"
-                            filter
-                            fluid
-                            id="borrower"
-                        />
-                        <small class="text-red-500" *ngIf="submitted && !selectedBorrowerLRN">{{ borrowerType === 'student' ? 'Student' : 'Teacher' }} is required.</small>
-                    </div>
+                    @if (isAdmin()) {
+                        <div>
+                            <label for="borrower" class="block font-bold mb-2">{{ borrowerType === 'student' ? 'Student' : 'Teacher' }} *</label>
+                            <p-select
+                                [(ngModel)]="selectedBorrowerLRN"
+                                [options]="borrowerType === 'student' ? students() : teachers()"
+                                [optionLabel]="borrowerType === 'student' ? 'name' : 'name'"
+                                [optionValue]="borrowerType === 'student' ? 'lrn' : 'teacherID'"
+                                placeholder="Select {{ borrowerType === 'student' ? 'Student' : 'Teacher' }}"
+                                filter
+                                fluid
+                                id="borrower"
+                            />
+                            @if (submitted && !selectedBorrowerLRN) {
+                                <small class="text-red-500">{{ borrowerType === 'student' ? 'Student' : 'Teacher' }} is required.</small>
+                            }
+                        </div>
+                    }
 
                     <div>
                         <label for="book" class="block font-bold mb-2">Book *</label>
                         <p-select [(ngModel)]="selectedBookAccessionNumber" [options]="books()" optionLabel="title" optionValue="accessionNumber" placeholder="Select Book" filter fluid id="book" />
-                        <small class="text-red-500" *ngIf="submitted && !selectedBookAccessionNumber">Book is required.</small>
+                        @if (submitted && !selectedBookAccessionNumber) {
+                            <small class="text-red-500">Book is required.</small>
+                        }
                     </div>
 
                     <div>
@@ -280,6 +294,9 @@ export class BorrowingComponent implements OnInit {
     // Get current user identifier
     currentUserIdentifier = computed(() => this.rbacService.getCurrentUserIdentifier());
 
+    // Get current user name
+    currentUserName = computed(() => this.authService.currentUser?.name || '');
+
     ngOnInit() {
         this.loadBorrowings();
         this.loadStudents();
@@ -301,9 +318,9 @@ export class BorrowingComponent implements OnInit {
                     // Filter to show only current user's borrowings
                     borrowingsData = borrowingsData.filter((b) => {
                         if (currentUserType === 'student') {
-                            return b.studentLRN === currentUserIdentifier && !(b.studentName || '').includes('Teacher');
+                            return b.studentLRN === currentUserIdentifier && b.borrowerType === 'student';
                         } else if (currentUserType === 'teacher') {
-                            return b.studentLRN === currentUserIdentifier && (b.studentName || '').includes('Teacher');
+                            return b.studentLRN === currentUserIdentifier && b.borrowerType === 'teacher';
                         }
                         return false;
                     });
@@ -475,6 +492,7 @@ export class BorrowingComponent implements OnInit {
             const borrowing: Borrowing = {
                 studentLRN: borrowerLRN,
                 studentName: `${borrowerName} (${this.borrowerType === 'student' ? '👤 Student' : '👨‍🏫 Teacher'})`,
+                borrowerType: this.borrowerType as 'student' | 'teacher',
                 bookAccessionNumber: book.accessionNumber,
                 bookTitle: book.title,
                 bookISBN: book.isbn,

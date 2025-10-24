@@ -98,7 +98,7 @@ export class AuthService {
                         username: teacherIDTrimmed,
                         teacherID: teacherIDTrimmed,
                         role: user.role || 'teacher',
-                        name: user.displayName || '',
+                        name: (user as any).name || user.displayName || '',
                         email: user.email || ''
                     };
                     localStorage.setItem(this.userKey, JSON.stringify(authUser));

@@ -6,6 +6,7 @@ export interface Borrowing {
     id?: string;
     studentLRN: string;
     studentName?: string;
+    borrowerType?: 'student' | 'teacher'; // Track if borrower is student or teacher
     bookAccessionNumber: string;
     bookTitle?: string;
     bookISBN?: string;
