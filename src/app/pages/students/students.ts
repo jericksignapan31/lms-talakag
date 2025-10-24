@@ -442,17 +442,18 @@ export class Students implements OnInit {
         reader.onload = (e: any) => {
             try {
                 const csv = e.target.result;
-                const rows = csv.split('\n').filter((row: string) => row.trim());
+                const rows = this.parseCSVRows(csv);
+                
                 if (rows.length < 2) {
                     this.messageService.add({ severity: 'warn', summary: 'Invalid File', detail: 'File must have headers and at least one row' });
                     return;
                 }
 
-                const headers = rows[0].split(',').map((h: string) => h.trim().toLowerCase());
+                const headers = rows[0].map((h: string) => h.trim().toLowerCase());
                 const importedStudents: Student[] = [];
 
                 for (let i = 1; i < rows.length; i++) {
-                    const values = rows[i].split(',').map((v: string) => v.trim().replace(/"/g, ''));
+                    const values = rows[i];
                     if (values.length > 0 && values[0]) {
                         const student: Student = {
                             lrn: values[headers.indexOf('lrn')] || '',
@@ -488,6 +489,59 @@ export class Students implements OnInit {
         reader.readAsText(file);
     }
 
+    parseCSVRows(csv: string): string[][] {
+        const rows: string[][] = [];
+        let row: string[] = [];
+        let current = '';
+        let insideQuotes = false;
+
+        for (let i = 0; i < csv.length; i++) {
+            const char = csv[i];
+            const nextChar = csv[i + 1];
+
+            if (char === '"') {
+                if (insideQuotes && nextChar === '"') {
+                    // Escaped quote
+                    current += '"';
+                    i++;
+                } else {
+                    // Toggle quote state
+                    insideQuotes = !insideQuotes;
+                }
+            } else if (char === ',' && !insideQuotes) {
+                // End of field
+                row.push(current.trim());
+                current = '';
+            } else if ((char === '\n' || char === '\r') && !insideQuotes) {
+                // End of row
+                if (current.trim() || row.length > 0) {
+                    row.push(current.trim());
+                    if (row.some(field => field)) {
+                        rows.push(row);
+                    }
+                    row = [];
+                    current = '';
+                }
+                // Skip \r\n combination
+                if (char === '\r' && nextChar === '\n') {
+                    i++;
+                }
+            } else {
+                current += char;
+            }
+        }
+
+        // Handle last field and row
+        if (current.trim() || row.length > 0) {
+            row.push(current.trim());
+            if (row.some(field => field)) {
+                rows.push(row);
+            }
+        }
+
+        return rows;
+    }
+
     parseExcel(file: File) {
         const reader = new FileReader();
         reader.onload = (e: any) => {
@@ -520,13 +574,19 @@ export class Students implements OnInit {
                     return;
                 }
 
-                // Detect delimiter (tab or comma)
-                const delimiter = rows[0].includes('\t') ? '\t' : ',';
-                const headers = rows[0].split(delimiter).map((h: string) => h.trim().toLowerCase());
+                // Parse using improved CSV parser that handles quoted fields
+                const parsedRows = this.parseCSVRows(data);
+                
+                if (parsedRows.length < 2) {
+                    this.messageService.add({ severity: 'warn', summary: 'Invalid File', detail: 'File must have headers and at least one row' });
+                    return;
+                }
+
+                const headers = parsedRows[0].map((h: string) => h.trim().toLowerCase());
                 const importedStudents: Student[] = [];
 
-                for (let i = 1; i < rows.length; i++) {
-                    const values = rows[i].split(delimiter).map((v: string) => v.trim().replace(/"/g, ''));
+                for (let i = 1; i < parsedRows.length; i++) {
+                    const values = parsedRows[i];
                     if (values.length > 0 && values[0]) {
                         const student: Student = {
                             lrn: values[headers.indexOf('lrn')] || '',
