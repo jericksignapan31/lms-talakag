@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, ViewChild, inject } from '@angular/core';
+import { Component, OnInit, signal, ViewChild, inject, computed } from '@angular/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { Table, TableModule } from 'primeng/table';
 import { CommonModule } from '@angular/common';
@@ -18,6 +18,8 @@ import { FirestoreBorrowingService, Borrowing, Penalty } from '../../services/fi
 import { FirestoreStudentService, Student } from '../../services/firestore-student.service';
 import { FirestoreTeacherService, Teacher } from '../../services/firestore-teacher.service';
 import { FirestoreBookService, Book } from '../../services/firestore-book.service';
+import { RoleBasedAccessService } from '../../services/role-based-access.service';
+import { AuthService } from '../auth/auth.service';
 
 @Component({
     selector: 'app-borrowing',
@@ -55,10 +57,13 @@ import { FirestoreBookService, Book } from '../../services/firestore-book.servic
             >
                 <ng-template #caption>
                     <div class="flex items-center justify-between gap-4 flex-wrap">
-                        <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-4" *ngIf="shouldShowFilters()">
                             <h5 class="m-0">Borrowing Management</h5>
                             <p-select [(ngModel)]="filterBorrowerType" [options]="borrowerFilterOptions" optionLabel="label" optionValue="value" placeholder="Filter by type" (onChange)="applyBorrowerFilter()" [showClear]="true" styleClass="w-40" />
                             <p-button label="Clear Filters" icon="pi pi-times" severity="secondary" size="small" text (onClick)="clearBorrowerFilters()" />
+                        </div>
+                        <div *ngIf="!shouldShowFilters()">
+                            <h5 class="m-0">My Borrowings</h5>
                         </div>
                         <p-iconfield>
                             <p-inputicon styleClass="pi pi-search" />
@@ -161,13 +166,30 @@ import { FirestoreBookService, Book } from '../../services/firestore-book.servic
         <p-dialog [(visible)]="borrowDialog" [style]="{ width: '550px' }" header="Borrow Book" [modal]="true">
             <ng-template #content>
                 <div class="flex flex-col gap-4">
-                    <div>
+                    <!-- Borrower Type - Only for Admin -->
+                    <div *ngIf="canChangeBorrowerType()">
                         <label for="borrowerType" class="block font-bold mb-2">Borrower Type *</label>
                         <p-select [(ngModel)]="borrowerType" [options]="borrowerTypeOptions" optionLabel="label" optionValue="value" placeholder="Select Borrower Type" fluid id="borrowerType" />
                         <small class="text-red-500" *ngIf="submitted && !borrowerType">Borrower type is required.</small>
                     </div>
 
-                    <div>
+                    <!-- For Teacher/Student: Show who will borrow -->
+                    <div *ngIf="!canChangeBorrowerType()">
+                        <label class="block font-bold mb-2">Borrower</label>
+                        <p-select
+                            [(ngModel)]="selectedBorrowerLRN"
+                            [options]="borrowerType === 'student' ? students() : teachers()"
+                            [optionLabel]="'name'"
+                            [optionValue]="borrowerType === 'student' ? 'lrn' : 'teacherID'"
+                            placeholder="Select"
+                            fluid
+                            [disabled]="true"
+                        />
+                        <small class="text-gray-500">You are automatically set as the borrower</small>
+                    </div>
+
+                    <!-- Borrower Selection - Only for Admin -->
+                    <div *ngIf="canChangeBorrowerType()">
                         <label for="borrower" class="block font-bold mb-2">{{ borrowerType === 'student' ? 'Student' : 'Teacher' }} *</label>
                         <p-select
                             [(ngModel)]="selectedBorrowerLRN"
@@ -242,6 +264,22 @@ export class BorrowingComponent implements OnInit {
     private bookService = inject(FirestoreBookService);
     private messageService = inject(MessageService);
     private confirmationService = inject(ConfirmationService);
+    private rbacService = inject(RoleBasedAccessService);
+    private authService = inject(AuthService);
+
+    // Computed properties for role-based access
+    isAdmin = computed(() => this.rbacService.isAdmin());
+    isTeacher = computed(() => this.rbacService.isTeacher());
+    isStudent = computed(() => this.rbacService.isStudent());
+
+    // Check if can change borrower type (admin only)
+    canChangeBorrowerType = computed(() => this.rbacService.canAccess('canChangeBorrowerType'));
+
+    // Check if should show filters (admin only)
+    shouldShowFilters = computed(() => this.rbacService.canAccess('canFilterBorrowings'));
+
+    // Get current user identifier
+    currentUserIdentifier = computed(() => this.rbacService.getCurrentUserIdentifier());
 
     ngOnInit() {
         this.loadBorrowings();
@@ -253,7 +291,26 @@ export class BorrowingComponent implements OnInit {
 
     async loadBorrowings() {
         try {
-            const borrowingsData = await this.borrowingService.getBorrowings();
+            let borrowingsData = await this.borrowingService.getBorrowings();
+
+            // Filter by current user if not admin
+            if (this.rbacService.shouldFilterByCurrentUser()) {
+                const currentUserIdentifier = this.rbacService.getCurrentUserIdentifier();
+                const currentUserType = this.rbacService.getCurrentUserType();
+
+                if (currentUserIdentifier && currentUserType) {
+                    // Filter to show only current user's borrowings
+                    borrowingsData = borrowingsData.filter((b) => {
+                        if (currentUserType === 'student') {
+                            return b.studentLRN === currentUserIdentifier && !(b.studentName || '').includes('Teacher');
+                        } else if (currentUserType === 'teacher') {
+                            return b.studentLRN === currentUserIdentifier && (b.studentName || '').includes('Teacher');
+                        }
+                        return false;
+                    });
+                }
+            }
+
             this.borrowings.set(borrowingsData);
             this.borrowingsFiltered.set(borrowingsData);
             this.applyBorrowerFilter();
@@ -269,7 +326,18 @@ export class BorrowingComponent implements OnInit {
 
     async loadPenalties() {
         try {
-            const penaltiesData = await this.borrowingService.getPendingPenalties();
+            let penaltiesData = await this.borrowingService.getPendingPenalties();
+
+            // Filter by current user if not admin
+            if (this.rbacService.shouldFilterByCurrentUser()) {
+                const currentUserIdentifier = this.rbacService.getCurrentUserIdentifier();
+
+                if (currentUserIdentifier) {
+                    // Filter to show only current user's penalties
+                    penaltiesData = penaltiesData.filter((p) => p.studentLRN === currentUserIdentifier);
+                }
+            }
+
             this.penalties.set(penaltiesData);
         } catch (error) {
             this.messageService.add({
@@ -310,8 +378,23 @@ export class BorrowingComponent implements OnInit {
 
     openBorrowDialog() {
         this.borrowDate = new Date().toISOString().split('T')[0];
-        this.borrowerType = null;
-        this.selectedBorrowerLRN = null;
+
+        // For admin: show borrower type selection
+        // For teacher/student: auto-set borrower type to current user
+        if (this.isAdmin()) {
+            this.borrowerType = null;
+            this.selectedBorrowerLRN = null;
+        } else {
+            // Auto-set borrower type and current user
+            if (this.isTeacher()) {
+                this.borrowerType = 'teacher';
+                this.selectedBorrowerLRN = this.authService.currentUser?.teacherID || null;
+            } else if (this.isStudent()) {
+                this.borrowerType = 'student';
+                this.selectedBorrowerLRN = this.authService.currentUser?.lrn || null;
+            }
+        }
+
         this.selectedBookAccessionNumber = null;
         this.submitted = false;
         this.borrowDialog = true;

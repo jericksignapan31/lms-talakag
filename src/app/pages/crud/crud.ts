@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, ViewChild, inject } from '@angular/core';
+import { Component, OnInit, signal, ViewChild, inject, computed } from '@angular/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { Table, TableModule } from 'primeng/table';
 import { CommonModule } from '@angular/common';
@@ -17,6 +17,7 @@ import { InputIconModule } from 'primeng/inputicon';
 import { IconFieldModule } from 'primeng/iconfield';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { FirestoreBookService, Book } from '../../services/firestore-book.service';
+import { RoleBasedAccessService } from '../../services/role-based-access.service';
 
 interface Column {
     field: string;
@@ -54,13 +55,15 @@ interface ExportColumn {
         <p-toast />
         <p-toolbar styleClass="mb-6">
             <ng-template #start>
-                <p-button label="New" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="openNew()" />
-                <p-button severity="secondary" label="Delete" icon="pi pi-trash" outlined (onClick)="deleteSelectedBooks()" [disabled]="!selectedBooks || !selectedBooks.length" />
+                <!-- Admin-only buttons -->
+                <p-button *ngIf="isAdmin()" label="New" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="openNew()" />
+                <p-button *ngIf="isAdmin()" severity="secondary" label="Delete" icon="pi pi-trash" outlined (onClick)="deleteSelectedBooks()" [disabled]="!selectedBooks || !selectedBooks.length" />
             </ng-template>
 
             <ng-template #end>
+                <!-- Export available to all users, Import admin-only -->
                 <p-button label="Export CSV" icon="pi pi-download" severity="info" class="mr-2" (onClick)="exportCSV()" />
-                <p-button label="Import XLS" icon="pi pi-upload" severity="success" (onClick)="fileInput.click()" />
+                <p-button *ngIf="isAdmin()" label="Import XLS" icon="pi pi-upload" severity="success" (onClick)="fileInput.click()" />
                 <input #fileInput type="file" hidden accept=".xls,.xlsx" (change)="handleFileInput($event)" />
             </ng-template>
         </p-toolbar>
@@ -93,7 +96,7 @@ interface ExportColumn {
             </ng-template>
             <ng-template #header>
                 <tr>
-                    <th style="width: 3rem">
+                    <th style="width: 3rem" *ngIf="isAdmin()">
                         <p-tableHeaderCheckbox />
                     </th>
                     <th pSortableColumn="accessionNumber" style="min-width: 12rem">
@@ -152,12 +155,12 @@ interface ExportColumn {
                         ISBN
                         <p-sortIcon field="isbn" />
                     </th>
-                    <th style="min-width: 12rem"></th>
+                    <th style="min-width: 12rem" *ngIf="isAdmin()"></th>
                 </tr>
             </ng-template>
             <ng-template #body let-book>
                 <tr>
-                    <td style="width: 3rem">
+                    <td style="width: 3rem" *ngIf="isAdmin()">
                         <p-tableCheckbox [value]="book" />
                     </td>
                     <td style="min-width: 12rem">{{ book.accessionNumber }}</td>
@@ -174,7 +177,7 @@ interface ExportColumn {
                     <td style="min-width: 8rem">{{ book.year }}</td>
                     <td style="min-width: 14rem">{{ book.remarks }}</td>
                     <td style="min-width: 12rem">{{ book.isbn }}</td>
-                    <td>
+                    <td *ngIf="isAdmin()">
                         <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true" (click)="editBook(book)" />
                         <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true" (click)="deleteBook(book)" />
                     </td>
@@ -293,7 +296,10 @@ export class Crud implements OnInit {
 
     private confirmationService = inject(ConfirmationService);
 
-    constructor() {}
+    private rbacService = inject(RoleBasedAccessService);
+
+    // Check if admin can manage books
+    isAdmin = computed(() => this.rbacService.isAdmin());
 
     exportCSV() {
         this.dt.exportCSV();
