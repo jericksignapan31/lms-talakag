@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, OnInit, signal, ViewChild, inject } from '@angular/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { Table, TableModule } from 'primeng/table';
 import { CommonModule } from '@angular/common';
@@ -16,24 +16,7 @@ import { TagModule } from 'primeng/tag';
 import { InputIconModule } from 'primeng/inputicon';
 import { IconFieldModule } from 'primeng/iconfield';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-
-interface Book {
-    id: string;
-    accessionNumber: string;
-    dateInput: string;
-    callNumber: string;
-    author: string;
-    title: string;
-    edition: string;
-    volumeNumber: string;
-    pages: string;
-    sourceOfFund: string;
-    price: number;
-    publisher: string;
-    year: string;
-    remarks: string;
-    isbn: string;
-}
+import { FirestoreBookService, Book } from '../../services/firestore-book.service';
 
 interface Column {
     field: string;
@@ -304,63 +287,46 @@ export class Crud implements OnInit {
 
     cols!: Column[];
 
-    constructor(
-        private messageService: MessageService,
-        private confirmationService: ConfirmationService
-    ) {}
+    private bookService = inject(FirestoreBookService);
+
+    private messageService = inject(MessageService);
+
+    private confirmationService = inject(ConfirmationService);
+
+    constructor() {}
 
     exportCSV() {
         this.dt.exportCSV();
     }
 
     ngOnInit() {
-        this.loadDemoData();
+        this.loadBooksFromFirestore();
+        this.initializeFundSources();
+        this.initializeColumns();
     }
 
-    loadDemoData() {
-        // Sample book data
-        this.books.set([
-            {
-                id: '1',
-                accessionNumber: 'ACC001',
-                dateInput: '2024-01-15',
-                callNumber: '823.9 ABS',
-                author: 'Austen, Jane',
-                title: 'Pride and Prejudice',
-                edition: '3rd',
-                volumeNumber: '1',
-                pages: '279',
-                sourceOfFund: 'Purchase',
-                price: 450,
-                publisher: 'Penguin Classics',
-                year: '2003',
-                remarks: 'Good condition',
-                isbn: '978-0141439518'
-            },
-            {
-                id: '2',
-                accessionNumber: 'ACC002',
-                dateInput: '2024-01-20',
-                callNumber: '500 DAW',
-                author: 'Dawkins, Richard',
-                title: 'The Selfish Gene',
-                edition: '2nd',
-                volumeNumber: '1',
-                pages: '360',
-                sourceOfFund: 'Donation',
-                price: 550,
-                publisher: 'Oxford University Press',
-                year: '1989',
-                remarks: 'Excellent condition',
-                isbn: '978-0192860926'
-            }
-        ]);
+    async loadBooksFromFirestore() {
+        try {
+            const booksData = await this.bookService.getBooks();
+            this.books.set(booksData);
+        } catch (error) {
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: 'Failed to load books from Firestore'
+            });
+            console.error('Error loading books:', error);
+        }
+    }
 
+    initializeFundSources() {
         this.fundSources = [
             { label: 'Purchase', value: 'Purchase' },
             { label: 'Donation', value: 'Donation' }
         ];
+    }
 
+    initializeColumns() {
         this.cols = [
             { field: 'accessionNumber', header: 'Accession Number' },
             { field: 'dateInput', header: 'Date Input' },
@@ -417,15 +383,32 @@ export class Crud implements OnInit {
             message: 'Are you sure you want to delete the selected books?',
             header: 'Confirm',
             icon: 'pi pi-exclamation-triangle',
-            accept: () => {
-                this.books.set(this.books().filter((val) => !this.selectedBooks?.includes(val)));
-                this.selectedBooks = null;
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Books Deleted',
-                    life: 3000
-                });
+            accept: async () => {
+                try {
+                    if (this.selectedBooks) {
+                        for (const book of this.selectedBooks) {
+                            if (book.id) {
+                                await this.bookService.deleteBook(book.id);
+                            }
+                        }
+                    }
+                    await this.loadBooksFromFirestore();
+                    this.selectedBooks = null;
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Successful',
+                        detail: 'Books Deleted',
+                        life: 3000
+                    });
+                } catch (error) {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'Failed to delete books',
+                        life: 3000
+                    });
+                    console.error('Error deleting books:', error);
+                }
             }
         });
     }
@@ -440,15 +423,28 @@ export class Crud implements OnInit {
             message: 'Are you sure you want to delete ' + book.title + '?',
             header: 'Confirm',
             icon: 'pi pi-exclamation-triangle',
-            accept: () => {
-                this.books.set(this.books().filter((val) => val.id !== book.id));
-                this.book = {} as Book;
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Book Deleted',
-                    life: 3000
-                });
+            accept: async () => {
+                try {
+                    if (book.id) {
+                        await this.bookService.deleteBook(book.id);
+                    }
+                    await this.loadBooksFromFirestore();
+                    this.book = {} as Book;
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Successful',
+                        detail: 'Book Deleted',
+                        life: 3000
+                    });
+                } catch (error) {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'Failed to delete book',
+                        life: 3000
+                    });
+                    console.error('Error deleting book:', error);
+                }
             }
         });
     }
@@ -474,32 +470,89 @@ export class Crud implements OnInit {
         return id;
     }
 
-    saveBook() {
-        this.submitted = true;
-        let _books = this.books();
-        if (this.book.accessionNumber?.trim() && this.book.title?.trim()) {
-            if (this.book.id) {
-                _books[this.findIndexById(this.book.id)] = this.book;
-                this.books.set([..._books]);
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Book Updated',
-                    life: 3000
-                });
-            } else {
-                this.book.id = this.createId();
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Book Created',
-                    life: 3000
-                });
-                this.books.set([..._books, this.book]);
-            }
+    private formatDateForInput(dateString: string): string {
+        if (!dateString || dateString.trim() === '') {
+            return new Date().toISOString().split('T')[0];
+        }
 
-            this.bookDialog = false;
-            this.book = {} as Book;
+        // Try to parse the date string
+        let date: Date;
+
+        // Check if it's already in YYYY-MM-DD format
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateString.trim())) {
+            date = new Date(dateString.trim());
+        }
+        // Try MM/DD/YYYY format
+        else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateString.trim())) {
+            const [month, day, year] = dateString.trim().split('/');
+            date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        }
+        // Try DD-MM-YYYY format
+        else if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(dateString.trim())) {
+            const [day, month, year] = dateString.trim().split('-');
+            date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        }
+        // Try DD/MM/YYYY format
+        else if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(dateString.trim())) {
+            const parts = dateString.trim().split('/');
+            // Assume DD/MM/YYYY if day > 12
+            if (parseInt(parts[0]) > 12) {
+                date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            } else {
+                date = new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
+            }
+        }
+        // Try parsing as general date string
+        else {
+            date = new Date(dateString);
+        }
+
+        // Check if date is valid
+        if (isNaN(date.getTime())) {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        // Return in YYYY-MM-DD format
+        return date.toISOString().split('T')[0];
+    }
+
+    async saveBook() {
+        this.submitted = true;
+        if (this.book.accessionNumber?.trim() && this.book.title?.trim()) {
+            try {
+                if (this.book.id) {
+                    // Update existing book
+                    await this.bookService.updateBook(this.book.id, this.book);
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Successful',
+                        detail: 'Book Updated',
+                        life: 3000
+                    });
+                } else {
+                    // Add new book
+                    await this.bookService.addBook(this.book);
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Successful',
+                        detail: 'Book Created',
+                        life: 3000
+                    });
+                }
+
+                // Reload books from Firestore
+                await this.loadBooksFromFirestore();
+                this.bookDialog = false;
+                this.book = {} as Book;
+            } catch (error) {
+                this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'Failed to save book',
+                    life: 3000
+                });
+                console.error('Error saving book:', error);
+            }
         }
     }
 
@@ -588,7 +641,7 @@ export class Crud implements OnInit {
             }
 
             const importedBooks: Book[] = [];
-            let id = this.books().length > 0 ? Math.max(...this.books().map((b) => parseInt(b.id) || 0)) + 1 : 1;
+            let id = this.books().length > 0 ? Math.max(...this.books().map((b) => parseInt(b.id || '0') || 0)) + 1 : 1;
 
             const getValue = (row: (string | number)[], key: string): string => {
                 const index = headerIndex[key];
@@ -615,7 +668,7 @@ export class Crud implements OnInit {
                 const book: Book = {
                     id: id.toString(),
                     accessionNumber,
-                    dateInput: getValue(values, 'date input') || new Date().toISOString().split('T')[0],
+                    dateInput: this.formatDateForInput(getValue(values, 'date input')),
                     callNumber: getValue(values, 'call number'),
                     author: getValue(values, 'author (last, first)') || getValue(values, 'author'),
                     title,
@@ -635,7 +688,15 @@ export class Crud implements OnInit {
             }
 
             if (importedBooks.length > 0) {
-                this.books.set([...this.books(), ...importedBooks]);
+                // Save each imported book to Firestore
+                for (const book of importedBooks) {
+                    try {
+                        await this.bookService.addBook(book);
+                    } catch (error) {
+                        console.error('Error saving imported book:', error);
+                    }
+                }
+                await this.loadBooksFromFirestore();
                 this.messageService.add({
                     severity: 'success',
                     summary: 'Success',
