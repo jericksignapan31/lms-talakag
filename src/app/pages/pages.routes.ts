@@ -6,6 +6,7 @@ import { Students } from './students/students';
 import { BorrowingComponent } from './borrowing/borrowing';
 import { TeacherComponent } from './teacher/teacher';
 import { AdminComponent } from './admin/admin';
+import { RoleGuard } from './auth/role.guard';
 
 export default [
     { path: 'documentation', component: Documentation },

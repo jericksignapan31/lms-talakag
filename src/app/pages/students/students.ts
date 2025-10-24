@@ -51,6 +51,7 @@ import { LmsAuthService } from '../../services/lms-auth.service';
                         <th pSortableColumn="province" style="width: 100px">Province <p-sortIcon field="province"></p-sortIcon></th>
                         <th pSortableColumn="contactNumber" style="width: 120px">Contact Number <p-sortIcon field="contactNumber"></p-sortIcon></th>
                         <th pSortableColumn="learningModality" style="width: 130px">Learning Modality <p-sortIcon field="learningModality"></p-sortIcon></th>
+                        <th pSortableColumn="role" style="width: 80px">Role <p-sortIcon field="role"></p-sortIcon></th>
                         <th style="width: 80px">Actions</th>
                     </tr>
                 </ng-template>
@@ -69,6 +70,7 @@ import { LmsAuthService } from '../../services/lms-auth.service';
                         <td style="width: 100px">{{ student.province }}</td>
                         <td style="width: 120px">{{ student.contactNumber }}</td>
                         <td style="width: 130px">{{ student.learningModality }}</td>
+                        <td style="width: 80px">{{ student.role }}</td>
                         <td style="width: 80px">
                             <button pButton pRipple type="button" icon="pi pi-pencil" class="p-button-rounded p-button-info mr-2" (click)="openEditDialog(student)" title="Edit"></button>
                             <button pButton pRipple type="button" icon="pi pi-trash" class="p-button-rounded p-button-danger" (click)="deleteStudent(student.id)" title="Delete"></button>
@@ -357,6 +359,8 @@ export class Students implements OnInit {
                 await this.studentService.updateStudent(this.editingId, this.studentForm);
                 this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Student updated successfully' });
             } else {
+                // Add role field for role-based access
+                this.studentForm.role = 'student';
                 // Create Firebase Authentication account first
                 const uid = await this.authService.createStudentAccount(this.studentForm.lrn);
                 // Then save student data to Firestore
@@ -468,7 +472,8 @@ export class Students implements OnInit {
                             municipality: values[headers.indexOf('municipality')] || '',
                             province: values[headers.indexOf('province')] || '',
                             contactNumber: values[headers.indexOf('contactnumber')] || '',
-                            learningModality: values[headers.indexOf('learningmodality')] || ''
+                            learningModality: values[headers.indexOf('learningmodality')] || '',
+                            role: 'student'
                         };
                         if (student.lrn && student.name) {
                             importedStudents.push(student);
@@ -601,7 +606,8 @@ export class Students implements OnInit {
                             municipality: values[headers.indexOf('municipality')] || '',
                             province: values[headers.indexOf('province')] || '',
                             contactNumber: values[headers.indexOf('contactnumber')] || '',
-                            learningModality: values[headers.indexOf('learningmodality')] || ''
+                            learningModality: values[headers.indexOf('learningmodality')] || '',
+                            role: 'student'
                         };
                         if (student.lrn && student.name) {
                             importedStudents.push(student);

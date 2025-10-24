@@ -84,10 +84,10 @@ export class RoleBasedAccessService {
                 canAccessBorrowing: true,
                 canAccessBorrowingManagement: true,
                 canAccessPenalties: true,
-                canChangeBorrowerType: false,
-                canFilterBorrowings: false,
-                canFilterPenalties: false,
-                canAccessAllData: false
+                canChangeBorrowerType: true,
+                canFilterBorrowings: true,
+                canFilterPenalties: true,
+                canAccessAllData: true
             },
             student: {
                 canAccessStudentUsers: false,
@@ -97,10 +97,10 @@ export class RoleBasedAccessService {
                 canAccessBorrowing: true,
                 canAccessBorrowingManagement: true,
                 canAccessPenalties: true,
-                canChangeBorrowerType: false,
-                canFilterBorrowings: false,
-                canFilterPenalties: false,
-                canAccessAllData: false
+                canChangeBorrowerType: true,
+                canFilterBorrowings: true,
+                canFilterPenalties: true,
+                canAccessAllData: true
             }
         };
 
@@ -152,5 +152,12 @@ export class RoleBasedAccessService {
         if (role === 'teacher') return 'teacher';
         if (role === 'admin' || role === 'super-admin') return 'admin';
         return undefined;
+    }
+
+    /**
+     * Get current role as a plain value (for use in guards and other non-computed contexts)
+     */
+    getRoleValue(): UserRole {
+        return this.getCurrentRole();
     }
 }

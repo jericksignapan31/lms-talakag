@@ -5,6 +5,7 @@ import { Observable, from, of, Subject, throwError } from 'rxjs';
 import { switchMap, map, tap, catchError } from 'rxjs/operators';
 import { FirebaseService } from './firebase.service';
 import { FirestoreStudentService, Student } from './firestore-student.service';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export interface AuthenticatedUser extends User {
     studentData?: Student | null;
@@ -29,12 +30,60 @@ export class LmsAuthService {
     private initAuthStateListener() {
         onAuthStateChanged(this.auth, async (user: User | null) => {
             if (user) {
-                // Fetch student data if exists
-                const studentData = await this.studentService.getStudentByLRN(user.uid);
+                // Determine role based on email format and fetch from database
+                let role = 'student';
+                let userData: any = null;
+
+                if (user.email?.includes('@lms.talakag')) {
+                    // Extract identifier from email
+                    const identifier = user.email.split('@')[0];
+
+                    // Check if it's a student (has student data)
+                    const studentData = await this.studentService.getStudentByLRN(identifier);
+                    if (studentData) {
+                        role = studentData.role || 'student';
+                        userData = studentData;
+                    } else {
+                        // Try teacher lookup
+                        try {
+                            const firestore = this.firebaseService.firestore;
+                            const teachersRef = collection(firestore, 'teachers');
+                            const q = query(teachersRef, where('teacherID', '==', identifier));
+                            const querySnapshot = await getDocs(q);
+
+                            if (!querySnapshot.empty) {
+                                const teacherDoc = querySnapshot.docs[0];
+                                const teacherData = teacherDoc.data();
+                                role = (teacherData as any)['role'] || 'teacher';
+                                userData = teacherData;
+                            }
+                        } catch (error) {
+                            console.error('Error fetching teacher data:', error);
+                        }
+                    }
+                } else {
+                    // Check if admin by email
+                    try {
+                        const firestore = this.firebaseService.firestore;
+                        const adminsRef = collection(firestore, 'admins');
+                        const q = query(adminsRef, where('email', '==', user.email));
+                        const querySnapshot = await getDocs(q);
+
+                        if (!querySnapshot.empty) {
+                            const adminDoc = querySnapshot.docs[0];
+                            const adminData = adminDoc.data();
+                            role = (adminData as any)['role'] || 'admin';
+                            userData = adminData;
+                        }
+                    } catch (error) {
+                        console.error('Error fetching admin data:', error);
+                    }
+                }
+
                 const authUser: AuthenticatedUser = {
                     ...user,
-                    studentData,
-                    role: studentData ? 'student' : 'admin'
+                    studentData: userData as Student | undefined,
+                    role
                 };
                 this.currentUserSubject.next(authUser);
             } else {
@@ -48,6 +97,7 @@ export class LmsAuthService {
      * LRN = username
      * Password can be either: {lrn} (old) or {lrn}@123 (new)
      * Email format: {lrn}@lms.talakag
+     * Fetches student data and role from Firestore
      */
     loginWithLRN(lrn: string, password: string): Observable<AuthenticatedUser | null> {
         const email = `${lrn}@lms.talakag`;
@@ -61,10 +111,13 @@ export class LmsAuthService {
         return from(signInWithEmailAndPassword(this.auth, email, newPasswordFormat)).pipe(
             switchMap(async (result) => {
                 const studentData = await this.studentService.getStudentByLRN(lrn);
+                const role = studentData?.role || 'student'; // Get role from student data
                 return {
                     ...result.user,
                     studentData,
-                    role: studentData ? 'student' : 'admin'
+                    role,
+                    lrn,
+                    name: studentData?.name || result.user.displayName || ''
                 } as AuthenticatedUser;
             }),
             tap((user) => this.currentUserSubject.next(user)),
@@ -75,10 +128,13 @@ export class LmsAuthService {
                     return from(signInWithEmailAndPassword(this.auth, email, oldPasswordFormat)).pipe(
                         switchMap(async (result) => {
                             const studentData = await this.studentService.getStudentByLRN(lrn);
+                            const role = studentData?.role || 'student'; // Get role from student data
                             return {
                                 ...result.user,
                                 studentData,
-                                role: studentData ? 'student' : 'admin'
+                                role,
+                                lrn,
+                                name: studentData?.name || result.user.displayName || ''
                             } as AuthenticatedUser;
                         }),
                         tap((user) => this.currentUserSubject.next(user))
@@ -96,9 +152,27 @@ export class LmsAuthService {
     loginWithEmail(email: string, password: string): Observable<AuthenticatedUser | null> {
         return from(signInWithEmailAndPassword(this.auth, email, password)).pipe(
             switchMap(async (result) => {
+                // Check if user is in admin collection to get proper role (admin or super-admin)
+                let role = 'admin';
+                try {
+                    const firestore = this.firebaseService.firestore;
+                    const adminsRef = collection(firestore, 'admins');
+                    const q = query(adminsRef, where('email', '==', email));
+                    const querySnapshot = await getDocs(q);
+
+                    if (!querySnapshot.empty) {
+                        const adminDoc = querySnapshot.docs[0];
+                        const adminData = adminDoc.data() as any;
+                        role = adminData.role || 'admin'; // Get role from Firestore (admin or super-admin)
+                    }
+                } catch (error) {
+                    console.error('Error fetching admin role:', error);
+                    // Default to admin if error occurs
+                }
+
                 return {
                     ...result.user,
-                    role: 'admin'
+                    role
                 } as AuthenticatedUser;
             }),
             tap((user) => this.currentUserSubject.next(user))
@@ -228,15 +302,38 @@ export class LmsAuthService {
      * Login with TeacherID as username
      * Email format: {teacherID}@lms.talakag
      * Password: {teacherID}
+     * Also fetches teacher data and role from Firestore
      */
     loginWithTeacherID(teacherID: string, password: string): Observable<AuthenticatedUser | null> {
         const email = `${teacherID}@lms.talakag`;
 
         return from(signInWithEmailAndPassword(this.auth, email, password)).pipe(
             switchMap(async (result) => {
+                // Fetch teacher data from Firestore to get role
+                let role = 'teacher';
+                let teacherData: any = null;
+
+                try {
+                    const firestore = this.firebaseService.firestore;
+                    const teachersRef = collection(firestore, 'teachers');
+                    const q = query(teachersRef, where('teacherID', '==', teacherID));
+                    const querySnapshot = await getDocs(q);
+
+                    if (!querySnapshot.empty) {
+                        const teacherDoc = querySnapshot.docs[0];
+                        teacherData = teacherDoc.data();
+                        role = teacherData.role || 'teacher'; // Get role from Firestore
+                    }
+                } catch (error) {
+                    console.error('Error fetching teacher data:', error);
+                    // Default to teacher role if error occurs
+                }
+
                 return {
                     ...result.user,
-                    role: 'teacher'
+                    role,
+                    teacherID,
+                    name: teacherData?.name || result.user.displayName || ''
                 } as AuthenticatedUser;
             }),
             tap((user) => this.currentUserSubject.next(user))

@@ -11,6 +11,7 @@ export interface Teacher {
     department: string;
     email: string;
     contactNumber: string;
+    role?: string;
     createdAt?: string;
 }
 

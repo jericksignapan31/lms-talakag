@@ -127,6 +127,10 @@ interface ExportColumn {
                         Contact Number
                         <p-sortIcon field="contactNumber" />
                     </th>
+                    <th pSortableColumn="role" style="min-width: 8rem">
+                        Role
+                        <p-sortIcon field="role" />
+                    </th>
                     <th style="min-width: 8rem">Actions</th>
                 </tr>
             </ng-template>
@@ -146,6 +150,9 @@ interface ExportColumn {
                     <td>{{ teacher.department }}</td>
                     <td>{{ teacher.email }}</td>
                     <td>{{ teacher.contactNumber }}</td>
+                    <td>
+                        <p-tag [value]="teacher.role" severity="warning" />
+                    </td>
                     <td>
                         <p-button icon="pi pi-pencil" severity="success" class="mr-2" (onClick)="editTeacher(teacher)" [text]="true" [rounded]="true" />
                         <p-button icon="pi pi-trash" severity="danger" (onClick)="deleteTeacher(teacher)" [text]="true" [rounded]="true" />
@@ -237,7 +244,8 @@ export class TeacherComponent implements OnInit {
             { field: 'birthDate', header: 'Birth Date' },
             { field: 'department', header: 'Department/Unit' },
             { field: 'email', header: 'Email' },
-            { field: 'contactNumber', header: 'Contact Number' }
+            { field: 'contactNumber', header: 'Contact Number' },
+            { field: 'role', header: 'Role' }
         ];
 
         this.exportColumns = this.cols.map((col) => ({ title: col.header, dataKey: col.field }));
@@ -384,7 +392,8 @@ export class TeacherComponent implements OnInit {
                         birthDate: this.teacher.birthDate,
                         department: this.teacher.department,
                         email: this.teacher.email,
-                        contactNumber: this.teacher.contactNumber
+                        contactNumber: this.teacher.contactNumber,
+                        role: 'teacher'
                     };
 
                     await this.teacherService.addTeacher(newTeacher);
@@ -523,7 +532,8 @@ export class TeacherComponent implements OnInit {
                     birthDate: this.formatDateForInput(getValue(values, 'birthdate')),
                     department: getValue(values, 'department'),
                     email: getValue(values, 'email'),
-                    contactNumber: getValue(values, 'contactnumber')
+                    contactNumber: getValue(values, 'contactnumber'),
+                    role: 'teacher'
                 };
 
                 importedTeachers.push(teacher);
@@ -669,7 +679,8 @@ export class TeacherComponent implements OnInit {
                     birthDate: this.formatDateForInput(getValue(values, 'birthdate')),
                     department: getValue(values, 'department'),
                     email: getValue(values, 'email'),
-                    contactNumber: getValue(values, 'contactnumber')
+                    contactNumber: getValue(values, 'contactnumber'),
+                    role: 'teacher'
                 };
 
                 importedTeachers.push(teacher);

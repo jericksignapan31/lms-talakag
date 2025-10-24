@@ -17,6 +17,7 @@ export interface Student {
     province: string;
     contactNumber: string;
     learningModality: string;
+    role?: string;
     createdAt?: string;
 }
 
