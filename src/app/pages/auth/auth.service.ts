@@ -212,7 +212,7 @@ export class AuthService {
                     this.scheduleTokenRefresh(tokenData);
 
                     // Navigate to dashboard after successful login
-                    setTimeout(() => this.router.navigate(['/pages/crud']), 300);
+                    setTimeout(() => this.router.navigate(['/pages/dashboard']), 300);
                 } else {
                     this.clearAuthData();
                 }
@@ -263,7 +263,7 @@ export class AuthService {
                     this.scheduleTokenRefresh(tokenData);
 
                     // Navigate to dashboard after successful login
-                    setTimeout(() => this.router.navigate(['/pages/crud']), 300);
+                    setTimeout(() => this.router.navigate(['/pages/dashboard']), 300);
                 } else {
                     this.clearAuthData();
                 }
@@ -313,7 +313,7 @@ export class AuthService {
                     this.scheduleTokenRefresh(tokenData);
 
                     // Navigate to dashboard after successful login
-                    setTimeout(() => this.router.navigate(['/pages/crud']), 300);
+                    setTimeout(() => this.router.navigate(['/pages/dashboard']), 300);
                 } else {
                     this.clearAuthData();
                 }
