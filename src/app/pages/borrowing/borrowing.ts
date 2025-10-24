@@ -21,22 +21,7 @@ import { FirestoreBookService, Book } from '../../services/firestore-book.servic
 @Component({
     selector: 'app-borrowing',
     standalone: true,
-    imports: [
-        CommonModule,
-        TableModule,
-        FormsModule,
-        ButtonModule,
-        RippleModule,
-        ToastModule,
-        ToolbarModule,
-        InputTextModule,
-        SelectModule,
-        DialogModule,
-        TagModule,
-        InputIconModule,
-        IconFieldModule,
-        ConfirmDialogModule
-    ],
+    imports: [CommonModule, TableModule, FormsModule, ButtonModule, RippleModule, ToastModule, ToolbarModule, InputTextModule, SelectModule, DialogModule, TagModule, InputIconModule, IconFieldModule, ConfirmDialogModule],
     template: `
         <p-toast />
         <p-toolbar styleClass="mb-6">
@@ -97,32 +82,11 @@ import { FirestoreBookService, Book } from '../../services/firestore-book.servic
                         <td style="min-width: 10rem">{{ borrowing.dueDate }}</td>
                         <td style="min-width: 10rem">{{ borrowing.returnDate || 'Not returned' }}</td>
                         <td style="min-width: 8rem">
-                            <p-tag
-                                [value]="borrowing.status | titlecase"
-                                [severity]="getStatusSeverity(borrowing.status)"
-                            />
+                            <p-tag [value]="borrowing.status | titlecase" [severity]="getStatusSeverity(borrowing.status)" />
                         </td>
                         <td style="min-width: 12rem">
-                            <p-button
-                                *ngIf="borrowing.status !== 'returned'"
-                                icon="pi pi-check"
-                                class="mr-2"
-                                severity="success"
-                                [rounded]="true"
-                                [outlined]="true"
-                                pTooltip="Return Book"
-                                tooltipPosition="top"
-                                (click)="returnBook(borrowing)"
-                            />
-                            <p-button
-                                icon="pi pi-trash"
-                                severity="danger"
-                                [rounded]="true"
-                                [outlined]="true"
-                                pTooltip="Delete"
-                                tooltipPosition="top"
-                                (click)="deleteBorrowing(borrowing)"
-                            />
+                            <p-button *ngIf="borrowing.status !== 'returned'" icon="pi pi-check" class="mr-2" severity="success" [rounded]="true" [outlined]="true" pTooltip="Return Book" tooltipPosition="top" (click)="returnBook(borrowing)" />
+                            <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true" pTooltip="Delete" tooltipPosition="top" (click)="deleteBorrowing(borrowing)" />
                         </td>
                     </tr>
                 </ng-template>
@@ -177,32 +141,11 @@ import { FirestoreBookService, Book } from '../../services/firestore-book.servic
                         <td style="min-width: 10rem" class="font-bold text-red-600">₱{{ penalty.amount }}</td>
                         <td style="min-width: 10rem">{{ penalty.dateCreated }}</td>
                         <td style="min-width: 8rem">
-                            <p-tag
-                                [value]="penalty.status | titlecase"
-                                [severity]="getPenaltySeverity(penalty.status)"
-                            />
+                            <p-tag [value]="penalty.status | titlecase" [severity]="getPenaltySeverity(penalty.status)" />
                         </td>
                         <td style="min-width: 12rem">
-                            <p-button
-                                *ngIf="penalty.status !== 'paid'"
-                                icon="pi pi-check"
-                                class="mr-2"
-                                severity="success"
-                                [rounded]="true"
-                                [outlined]="true"
-                                pTooltip="Mark as Paid"
-                                tooltipPosition="top"
-                                (click)="markPenaltyAsPaid(penalty)"
-                            />
-                            <p-button
-                                icon="pi pi-trash"
-                                severity="danger"
-                                [rounded]="true"
-                                [outlined]="true"
-                                pTooltip="Delete"
-                                tooltipPosition="top"
-                                (click)="deletePenalty(penalty)"
-                            />
+                            <p-button *ngIf="penalty.status !== 'paid'" icon="pi pi-check" class="mr-2" severity="success" [rounded]="true" [outlined]="true" pTooltip="Mark as Paid" tooltipPosition="top" (click)="markPenaltyAsPaid(penalty)" />
+                            <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true" pTooltip="Delete" tooltipPosition="top" (click)="deletePenalty(penalty)" />
                         </td>
                     </tr>
                 </ng-template>
@@ -215,31 +158,13 @@ import { FirestoreBookService, Book } from '../../services/firestore-book.servic
                 <div class="flex flex-col gap-4">
                     <div>
                         <label for="student" class="block font-bold mb-2">Student *</label>
-                        <p-select
-                            [(ngModel)]="selectedStudentLRN"
-                            [options]="students()"
-                            optionLabel="name"
-                            optionValue="lrn"
-                            placeholder="Select Student"
-                            filter
-                            fluid
-                            id="student"
-                        />
+                        <p-select [(ngModel)]="selectedStudentLRN" [options]="students()" optionLabel="name" optionValue="lrn" placeholder="Select Student" filter fluid id="student" />
                         <small class="text-red-500" *ngIf="submitted && !selectedStudentLRN">Student is required.</small>
                     </div>
 
                     <div>
                         <label for="book" class="block font-bold mb-2">Book *</label>
-                        <p-select
-                            [(ngModel)]="selectedBookAccessionNumber"
-                            [options]="books()"
-                            optionLabel="title"
-                            optionValue="accessionNumber"
-                            placeholder="Select Book"
-                            filter
-                            fluid
-                            id="book"
-                        />
+                        <p-select [(ngModel)]="selectedBookAccessionNumber" [options]="books()" optionLabel="title" optionValue="accessionNumber" placeholder="Select Book" filter fluid id="book" />
                         <small class="text-red-500" *ngIf="submitted && !selectedBookAccessionNumber">Book is required.</small>
                     </div>
 

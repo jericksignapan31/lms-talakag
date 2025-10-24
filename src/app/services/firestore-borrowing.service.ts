@@ -263,9 +263,7 @@ export class FirestoreBorrowingService {
 
             for (const borrowing of overdueBorrowings) {
                 // Check if penalty already exists for this borrowing
-                const existingPenalties = await getDocs(
-                    query(collection(this.firestore, this.penaltyCollectionName), where('borrowingId', '==', borrowing.id))
-                );
+                const existingPenalties = await getDocs(query(collection(this.firestore, this.penaltyCollectionName), where('borrowingId', '==', borrowing.id)));
 
                 if (existingPenalties.docs.length === 0 && borrowing.id) {
                     // No penalty exists, create one
