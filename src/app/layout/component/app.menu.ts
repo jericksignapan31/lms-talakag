@@ -53,6 +53,11 @@ export class AppMenu {
                         label: 'Teacher Users',
                         icon: 'pi pi-fw pi-id-card',
                         routerLink: ['/pages/teacher']
+                    },
+                    {
+                        label: 'Admin Users',
+                        icon: 'pi pi-fw pi-cog',
+                        routerLink: ['/pages/admin']
                     }
                 ]
             }

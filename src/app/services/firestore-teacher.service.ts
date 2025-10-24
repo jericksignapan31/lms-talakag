@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { collection, addDoc, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { FirebaseService } from './firebase.service';
+import { LmsAuthService } from './lms-auth.service';
 
 export interface Teacher {
     id?: string;
@@ -18,6 +19,7 @@ export interface Teacher {
 })
 export class FirestoreTeacherService {
     private firebaseService = inject(FirebaseService);
+    private authService = inject(LmsAuthService);
     private firestore = this.firebaseService.firestore;
     private collectionName = 'teachers';
 
@@ -111,6 +113,37 @@ export class FirestoreTeacherService {
         } catch (error) {
             console.error('Error searching teachers by name:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Create a teacher account in Firebase Authentication
+     * Uses teacherID as both username and password
+     * Email format: {teacherID}@lms.talakag
+     * Password: {teacherID}
+     */
+    async createTeacherAccount(teacher: Teacher): Promise<string | null> {
+        try {
+            // Create Firebase Auth account
+            const uid = await this.authService.createTeacherAccount(teacher.teacherID);
+            console.log(`Teacher account created for ${teacher.name} (${teacher.teacherID})`);
+            return uid;
+        } catch (error: any) {
+            console.error(`Error creating teacher account for ${teacher.teacherID}:`, error);
+            throw new Error(`Failed to create account for ${teacher.name}: ${error.message}`);
+        }
+    }
+
+    /**
+     * Delete a teacher account from Firebase Authentication
+     */
+    async deleteTeacherAccount(teacherID: string): Promise<void> {
+        try {
+            await this.authService.deleteTeacherAccount(teacherID);
+            console.log(`Teacher account deleted for ${teacherID}`);
+        } catch (error: any) {
+            console.error(`Error deleting teacher account for ${teacherID}:`, error);
+            throw new Error(`Failed to delete account for ${teacherID}: ${error.message}`);
         }
     }
 }

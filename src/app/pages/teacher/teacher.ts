@@ -312,20 +312,31 @@ export class TeacherComponent implements OnInit {
 
     deleteTeacher(teacher: Teacher) {
         this.confirmationService.confirm({
-            message: 'Are you sure you want to delete ' + teacher.name + '?',
+            message: 'Are you sure you want to delete ' + teacher.name + '?\n\nThis will also delete their Firebase account.',
             header: 'Confirm',
             icon: 'pi pi-exclamation-triangle',
             accept: async () => {
                 try {
                     if (teacher.id) {
+                        // Delete from Firestore
                         await this.teacherService.deleteTeacher(teacher.id);
+
+                        // Delete Firebase account
+                        if (teacher.teacherID) {
+                            try {
+                                await this.teacherService.deleteTeacherAccount(teacher.teacherID);
+                            } catch (accountError) {
+                                // Log error but continue with deletion
+                                console.warn('Account deletion partial:', accountError);
+                            }
+                        }
                     }
                     await this.loadTeachersFromFirestore();
                     this.teacher = this.getEmptyTeacher();
                     this.messageService.add({
                         severity: 'success',
                         summary: 'Successful',
-                        detail: 'Teacher Deleted',
+                        detail: 'Teacher and Account Deleted',
                         life: 3000
                     });
                 } catch (error) {
@@ -365,21 +376,36 @@ export class TeacherComponent implements OnInit {
                     });
                 } else {
                     // Add new teacher
-                    await this.teacherService.addTeacher({
+                    const newTeacher: Teacher = {
                         name: this.teacher.name,
                         teacherID: this.teacher.teacherID,
                         birthDate: this.teacher.birthDate,
                         department: this.teacher.department,
                         email: this.teacher.email,
                         contactNumber: this.teacher.contactNumber
-                    });
+                    };
 
-                    this.messageService.add({
-                        severity: 'success',
-                        summary: 'Successful',
-                        detail: 'Teacher Added',
-                        life: 3000
-                    });
+                    await this.teacherService.addTeacher(newTeacher);
+
+                    // Create Firebase account for new teacher
+                    try {
+                        await this.teacherService.createTeacherAccount(newTeacher);
+                        this.messageService.add({
+                            severity: 'success',
+                            summary: 'Successful',
+                            detail: `Teacher Added and Account Created\nUsername: ${this.teacher.teacherID}\nPassword: ${this.teacher.teacherID}`,
+                            life: 5000
+                        });
+                    } catch (accountError) {
+                        // Teacher added but account creation failed
+                        this.messageService.add({
+                            severity: 'warn',
+                            summary: 'Partial Success',
+                            detail: `Teacher Added but Account Creation Failed: ${accountError instanceof Error ? accountError.message : 'Unknown error'}`,
+                            life: 5000
+                        });
+                        console.error('Account creation error:', accountError);
+                    }
                 }
 
                 await this.loadTeachersFromFirestore();

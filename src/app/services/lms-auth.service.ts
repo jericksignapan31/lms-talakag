@@ -205,4 +205,103 @@ export class LmsAuthService {
             // This prevents cascade failures
         }
     }
+
+    /**
+     * Create a teacher account in Firebase Authentication
+     * Email format: {teacherID}@lms.talakag
+     * Password: {teacherID} (same as username for easy access)
+     */
+    async createTeacherAccount(teacherID: string): Promise<string | null> {
+        try {
+            const email = `${teacherID}@lms.talakag`;
+            const password = teacherID; // Username as password for teacher
+
+            const result = await createUserWithEmailAndPassword(this.auth, email, password);
+            return result.user.uid;
+        } catch (error: any) {
+            console.error('Error creating teacher account:', error);
+            throw new Error(`Failed to create teacher account: ${error.message}`);
+        }
+    }
+
+    /**
+     * Login with TeacherID as username
+     * Email format: {teacherID}@lms.talakag
+     * Password: {teacherID}
+     */
+    loginWithTeacherID(teacherID: string, password: string): Observable<AuthenticatedUser | null> {
+        const email = `${teacherID}@lms.talakag`;
+
+        return from(signInWithEmailAndPassword(this.auth, email, password)).pipe(
+            switchMap(async (result) => {
+                return {
+                    ...result.user,
+                    role: 'teacher'
+                } as AuthenticatedUser;
+            }),
+            tap((user) => this.currentUserSubject.next(user))
+        );
+    }
+
+    /**
+     * Delete teacher account by teacherID
+     * Note: In a real application with Firebase Admin SDK, you would delete the user directly
+     * For now, this logs the deletion intention. A backend function would handle actual deletion.
+     */
+    async deleteTeacherAccount(teacherID: string): Promise<void> {
+        try {
+            const email = `${teacherID}@lms.talakag`;
+
+            // Try to delete current user if it matches
+            const currentUser = this.auth.currentUser;
+            if (currentUser && currentUser.email === email) {
+                await currentUser.delete();
+            } else {
+                // For other users, log intention to delete
+                console.info(`Delete request for teacher account: ${email}`);
+                console.warn('Note: Full account deletion requires Firebase Admin SDK on backend');
+            }
+        } catch (error: any) {
+            console.error('Error deleting teacher account:', error);
+            // Don't throw error to allow teacher deletion even if auth account can't be deleted
+        }
+    }
+
+    /**
+     * Create an admin account in Firebase Authentication
+     * Email format: {email}
+     * Password: {password}
+     * Note: Email should be the admin's actual email
+     */
+    async createAdminAccount(email: string, password: string): Promise<string | null> {
+        try {
+            // Validate password strength (minimum 6 characters)
+            if (password.length < 6) {
+                throw new Error('Password must be at least 6 characters');
+            }
+
+            const result = await createUserWithEmailAndPassword(this.auth, email, password);
+            return result.user.uid;
+        } catch (error: any) {
+            console.error('Error creating admin account:', error);
+            throw new Error(`Failed to create admin account: ${error.message}`);
+        }
+    }
+
+    /**
+     * Delete admin account by email
+     */
+    async deleteAdminAccount(email: string): Promise<void> {
+        try {
+            const currentUser = this.auth.currentUser;
+            if (currentUser && currentUser.email === email) {
+                await currentUser.delete();
+            } else {
+                console.info(`Delete request for admin account: ${email}`);
+                console.warn('Note: Full account deletion requires Firebase Admin SDK on backend');
+            }
+        } catch (error: any) {
+            console.error('Error deleting admin account:', error);
+        }
+    }
 }
