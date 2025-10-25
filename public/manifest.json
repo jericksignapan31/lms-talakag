@@ -2,7 +2,7 @@
   "id": "/",
   "name": "LMS - TALAKAG",
   "short_name": "LMS Talakag",
-  "description": "Learning Management System for Talakag",
+  "description": "Library Management System for Talakag",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
