@@ -152,7 +152,7 @@ interface ExportColumn {
                     <td>{{ teacher.email }}</td>
                     <td>{{ teacher.contactNumber }}</td>
                     <td>
-                        <p-tag [value]="teacher.role" severity="warning" />
+                        <p-tag [value]="teacher.role" severity="warn" />
                     </td>
                     <td>
                         <p-button icon="pi pi-eye" severity="info" class="mr-2" (onClick)="openProfileDialog(teacher)" [text]="true" [rounded]="true" pTooltip="View Profile" tooltipPosition="top" />

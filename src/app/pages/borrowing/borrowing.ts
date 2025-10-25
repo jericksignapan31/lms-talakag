@@ -681,7 +681,7 @@ export class BorrowingComponent implements OnInit {
         });
     }
 
-    getStatusSeverity(status: string): string {
+    getStatusSeverity(status: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | null {
         switch (status) {
             case 'returned':
                 return 'success';
@@ -694,7 +694,7 @@ export class BorrowingComponent implements OnInit {
         }
     }
 
-    getPenaltySeverity(status: string): string {
+    getPenaltySeverity(status: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | null {
         return status === 'paid' ? 'success' : 'danger';
     }
 

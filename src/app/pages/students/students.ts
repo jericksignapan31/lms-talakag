@@ -121,7 +121,7 @@ import { FirebaseAuthService } from '../../services/firebase-auth.service';
                     <td>{{ student.sex }}</td>
                     <td>{{ student.contactNumber }}</td>
                     <td>
-                        <p-tag [value]="student.role" severity="warning" />
+                        <p-tag [value]="student.role" severity="warn" />
                     </td>
                     <td>
                         <p-button icon="pi pi-eye" severity="info" class="mr-2" (onClick)="openProfileDialog(student)" [text]="true" [rounded]="true" pTooltip="View Profile" tooltipPosition="top" />
