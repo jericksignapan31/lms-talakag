@@ -50,14 +50,6 @@ import { AuthService } from '../../pages/auth/auth.service';
 
             <div class="layout-topbar-menu hidden lg:block">
                 <div class="layout-topbar-menu-content">
-                    <button type="button" class="layout-topbar-action">
-                        <i class="pi pi-calendar"></i>
-                        <span>Calendar</span>
-                    </button>
-                    <button type="button" class="layout-topbar-action">
-                        <i class="pi pi-inbox"></i>
-                        <span>Messages</span>
-                    </button>
                     <div class="relative inline-block">
                         <button type="button" class="layout-topbar-action" (click)="toggleUserMenu()">
                             <i class="pi pi-user"></i>
@@ -67,6 +59,10 @@ import { AuthService } from '../../pages/auth/auth.service';
                             <button type="button" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2" (click)="goToProfile()">
                                 <i class="pi pi-user text-sm"></i>
                                 <span>Profile</span>
+                            </button>
+                            <button type="button" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2" (click)="goToAccountSettings()">
+                                <i class="pi pi-cog text-sm"></i>
+                                <span>Account Settings</span>
                             </button>
                             <hr class="my-1 border-gray-200 dark:border-slate-600" />
                             <button type="button" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2 text-red-600 dark:text-red-400" (click)="logout()">
@@ -124,6 +120,11 @@ export class AppTopbar {
     goToProfile() {
         this.isUserMenuOpen = false;
         this.router.navigate(['/pages/profile']);
+    }
+
+    goToAccountSettings() {
+        this.isUserMenuOpen = false;
+        this.router.navigate(['/pages/account-settings']);
     }
 
     logout() {

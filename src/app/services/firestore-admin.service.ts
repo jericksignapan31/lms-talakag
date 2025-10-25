@@ -11,6 +11,13 @@ export interface Admin {
     department: string;
     role: 'admin' | 'super-admin';
     status: 'active' | 'inactive';
+    birthDate?: string;
+    sex?: string;
+    contactNumber?: string;
+    address?: string;
+    barangay?: string;
+    municipality?: string;
+    province?: string;
     createdAt?: string;
     lastLogin?: string;
 }

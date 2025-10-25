@@ -34,6 +34,9 @@ import { FirestoreAdminService, Admin } from '../../services/firestore-admin.ser
                                 <th class="px-4 py-3 text-left font-semibold text-gray-700">Name</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-700">Email</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-700">Admin ID</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Birth Date</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Sex</th>
+                                <th class="px-4 py-3 text-left font-semibold text-gray-700">Contact</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-700">Department</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-700">Role</th>
                                 <th class="px-4 py-3 text-left font-semibold text-gray-700">Status</th>
@@ -46,6 +49,9 @@ import { FirestoreAdminService, Admin } from '../../services/firestore-admin.ser
                                 <td class="px-4 py-3 text-gray-800">{{ admin.name }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ admin.email }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ admin.adminID }}</td>
+                                <td class="px-4 py-3 text-gray-600">{{ admin.birthDate || '-' }}</td>
+                                <td class="px-4 py-3 text-gray-600">{{ admin.sex || '-' }}</td>
+                                <td class="px-4 py-3 text-gray-600">{{ admin.contactNumber || '-' }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ admin.department }}</td>
                                 <td class="px-4 py-3">
                                     <span class="px-3 py-1 rounded-full text-xs font-semibold" [ngClass]="admin.role === 'super-admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'">
@@ -59,12 +65,12 @@ import { FirestoreAdminService, Admin } from '../../services/firestore-admin.ser
                                 </td>
                                 <td class="px-4 py-3 text-gray-600">{{ admin.lastLogin ? (admin.lastLogin | date: 'short') : 'Never' }}</td>
                                 <td class="px-4 py-3 text-center">
-                                    <button pButton pRipple icon="pi pi-pencil" class="p-button-rounded p-button-warning p-button-sm mr-2" (click)="editAdmin(admin)"></button>
-                                    <button pButton pRipple icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm" (click)="confirmDelete(admin)"></button>
+                                    <button pButton pRipple icon="pi pi-pencil" class="p-button-rounded p-button-warning p-button-sm mr-2" (click)="editAdmin(admin)" title="Edit"></button>
+                                    <button pButton pRipple icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm" (click)="confirmDelete(admin)" title="Delete"></button>
                                 </td>
                             </tr>
                             <tr *ngIf="admins().length === 0" class="border-b border-gray-200">
-                                <td colspan="8" class="px-4 py-8 text-center text-gray-500">No admins found</td>
+                                <td colspan="11" class="px-4 py-8 text-center text-gray-500">No admins found</td>
                             </tr>
                         </tbody>
                     </table>
@@ -74,36 +80,86 @@ import { FirestoreAdminService, Admin } from '../../services/firestore-admin.ser
 
         <!-- Add/Edit Dialog -->
         <p-dialog [visible]="displayDialog()" (visibleChange)="displayDialog.set($event)" [header]="editingAdmin() ? 'Edit Admin' : 'Add Admin'" [modal]="true" [style]="{ width: '50vw' }" [breakpoints]="{ '960px': '75vw', '640px': '90vw' }">
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                    <input pInputText [(ngModel)]="adminForm.name" class="w-full" placeholder="Admin name" />
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                    <input pInputText [(ngModel)]="adminForm.email" type="email" class="w-full" placeholder="admin@example.com" />
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Admin ID</label>
-                    <div class="flex gap-2">
-                        <input pInputText [(ngModel)]="adminForm.adminID" class="w-full" placeholder="Auto-generated" [readOnly]="!editingAdmin()" [ngClass]="{ 'bg-gray-100': !editingAdmin() }" />
-                        <button *ngIf="!editingAdmin()" pButton type="button" (click)="generateNewAdminID()" label="Generate" class="p-button-info p-button-sm"></button>
+            <div class="space-y-4 max-h-96 overflow-y-auto">
+                <!-- Personal Information Section -->
+                <div class="border-b pb-4">
+                    <h3 class="font-semibold text-gray-700 mb-3">Personal Information</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+                        <input pInputText [(ngModel)]="adminForm.name" class="w-full" placeholder="Full name" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2 mt-3">Email *</label>
+                        <input pInputText [(ngModel)]="adminForm.email" type="email" class="w-full" placeholder="admin@example.com" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2 mt-3">Birth Date</label>
+                        <input pInputText [(ngModel)]="adminForm.birthDate" type="date" class="w-full" />
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mt-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Sex</label>
+                            <p-select [(ngModel)]="adminForm.sex" [options]="sexOptions" optionLabel="label" optionValue="value" class="w-full" placeholder="Select"></p-select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
+                            <input pInputText [(ngModel)]="adminForm.contactNumber" type="tel" class="w-full" placeholder="+63 9XX XXX XXXX" />
+                        </div>
                     </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Department</label>
-                    <p-select [(ngModel)]="adminForm.department" [options]="departmentOptions" optionLabel="label" optionValue="value" class="w-full" placeholder="Select Department"></p-select>
+
+                <!-- Address Information Section -->
+                <div class="border-b pb-4">
+                    <h3 class="font-semibold text-gray-700 mb-3">Address</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                        <input pInputText [(ngModel)]="adminForm.address" class="w-full" placeholder="Street address" />
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 mt-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Barangay</label>
+                            <input pInputText [(ngModel)]="adminForm.barangay" class="w-full" placeholder="Barangay" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Municipality</label>
+                            <input pInputText [(ngModel)]="adminForm.municipality" class="w-full" placeholder="Municipality" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Province</label>
+                            <input pInputText [(ngModel)]="adminForm.province" class="w-full" placeholder="Province" />
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
-                    <p-select [(ngModel)]="adminForm.role" [options]="roleOptions" optionLabel="label" optionValue="value" class="w-full"></p-select>
+
+                <!-- Admin Information Section -->
+                <div class="border-b pb-4">
+                    <h3 class="font-semibold text-gray-700 mb-3">Admin Information</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Admin ID *</label>
+                        <div class="flex gap-2">
+                            <input pInputText [(ngModel)]="adminForm.adminID" class="w-full" placeholder="Auto-generated" [readOnly]="!editingAdmin()" [ngClass]="{ 'bg-gray-100': !editingAdmin() }" />
+                            <button *ngIf="!editingAdmin()" pButton type="button" (click)="generateNewAdminID()" label="Generate" class="p-button-info p-button-sm"></button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2 mt-3">Department</label>
+                        <p-select [(ngModel)]="adminForm.department" [options]="departmentOptions" optionLabel="label" optionValue="value" class="w-full" placeholder="Select Department"></p-select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mt-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Role *</label>
+                            <p-select [(ngModel)]="adminForm.role" [options]="roleOptions" optionLabel="label" optionValue="value" class="w-full"></p-select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                            <p-select [(ngModel)]="adminForm.status" [options]="statusOptions" optionLabel="label" optionValue="value" class="w-full"></p-select>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                    <p-select [(ngModel)]="adminForm.status" [options]="statusOptions" optionLabel="label" optionValue="value" class="w-full"></p-select>
-                </div>
+
+                <!-- Password Section (only for new admins) -->
                 <div *ngIf="!editingAdmin()">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password *</label>
                     <input pInputText [(ngModel)]="adminForm.password" type="password" class="w-full" placeholder="Minimum 6 characters" />
                 </div>
             </div>
@@ -136,6 +192,13 @@ export class AdminComponent implements OnInit, OnDestroy {
         email: '',
         adminID: '',
         department: '',
+        birthDate: '',
+        sex: '',
+        contactNumber: '',
+        address: '',
+        barangay: '',
+        municipality: '',
+        province: '',
         role: 'admin' as 'admin' | 'super-admin',
         status: 'active' as 'active' | 'inactive',
         password: '',
@@ -151,6 +214,12 @@ export class AdminComponent implements OnInit, OnDestroy {
     statusOptions = [
         { label: 'Active', value: 'active' },
         { label: 'Inactive', value: 'inactive' }
+    ];
+
+    sexOptions = [
+        { label: 'Male', value: 'Male' },
+        { label: 'Female', value: 'Female' },
+        { label: 'Other', value: 'Other' }
     ];
 
     departmentOptions = [
@@ -198,6 +267,13 @@ export class AdminComponent implements OnInit, OnDestroy {
             email: '',
             adminID: '',
             department: '',
+            birthDate: '',
+            sex: '',
+            contactNumber: '',
+            address: '',
+            barangay: '',
+            municipality: '',
+            province: '',
             role: 'admin',
             status: 'active',
             password: '',
@@ -241,6 +317,13 @@ export class AdminComponent implements OnInit, OnDestroy {
                 email: this.adminForm.email,
                 adminID: this.adminForm.adminID,
                 department: this.adminForm.department,
+                birthDate: this.adminForm.birthDate,
+                sex: this.adminForm.sex,
+                contactNumber: this.adminForm.contactNumber,
+                address: this.adminForm.address,
+                barangay: this.adminForm.barangay,
+                municipality: this.adminForm.municipality,
+                province: this.adminForm.province,
                 role: this.adminForm.role,
                 status: this.adminForm.status
             };
@@ -267,6 +350,13 @@ export class AdminComponent implements OnInit, OnDestroy {
                 email: this.adminForm.email,
                 adminID: this.adminForm.adminID,
                 department: this.adminForm.department,
+                birthDate: this.adminForm.birthDate,
+                sex: this.adminForm.sex,
+                contactNumber: this.adminForm.contactNumber,
+                address: this.adminForm.address,
+                barangay: this.adminForm.barangay,
+                municipality: this.adminForm.municipality,
+                province: this.adminForm.province,
                 role: this.adminForm.role,
                 status: this.adminForm.status,
                 createdAt: new Date().toISOString()
