@@ -20,10 +20,7 @@ import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 
             <div class="max-w-4xl mx-auto">
                 <!-- Header -->
                 <div class="mb-8">
-                    <button
-                        (click)="goBack()"
-                        class="mb-4 inline-flex items-center gap-2 text-blue-500 hover:text-blue-700 dark:hover:text-blue-400"
-                    >
+                    <button (click)="goBack()" class="mb-4 inline-flex items-center gap-2 text-blue-500 hover:text-blue-700 dark:hover:text-blue-400">
                         <i class="pi pi-arrow-left"></i>
                         Back to Profile
                     </button>
@@ -33,16 +30,16 @@ import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 
 
                 <!-- Success/Error Messages -->
                 @if (successMessage) {
-                <div class="mb-4 p-4 bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-300 rounded-lg flex items-center gap-3">
-                    <i class="pi pi-check-circle"></i>
-                    <span>{{ successMessage }}</span>
-                </div>
+                    <div class="mb-4 p-4 bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-300 rounded-lg flex items-center gap-3">
+                        <i class="pi pi-check-circle"></i>
+                        <span>{{ successMessage }}</span>
+                    </div>
                 }
                 @if (errorMessage) {
-                <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg flex items-center gap-3">
-                    <i class="pi pi-exclamation-circle"></i>
-                    <span>{{ errorMessage }}</span>
-                </div>
+                    <div class="mb-4 p-4 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg flex items-center gap-3">
+                        <i class="pi pi-exclamation-circle"></i>
+                        <span>{{ errorMessage }}</span>
+                    </div>
                 }
 
                 <!-- Tabs -->
@@ -73,286 +70,278 @@ import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 
 
                 <!-- Edit Profile Tab -->
                 @if (activeTab === 'profile') {
-                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden">
-                    <form [formGroup]="profileForm" (ngSubmit)="updateProfile()" class="divide-y divide-gray-200 dark:divide-slate-700">
-                        <!-- Personal Information -->
-                        <div class="px-6 py-6">
-                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Personal Information</h2>
-                            <div class="space-y-4">
-                                <div>
-                                    <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
-                                    <input
-                                        type="text"
-                                        id="name"
-                                        formControlName="name"
-                                        class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden">
+                        <form [formGroup]="profileForm" (ngSubmit)="updateProfile()" class="divide-y divide-gray-200 dark:divide-slate-700">
+                            <!-- Personal Information -->
+                            <div class="px-6 py-6">
+                                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Personal Information</h2>
+                                <div class="space-y-4">
                                     <div>
-                                        <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name</label>
                                         <input
-                                            type="email"
-                                            id="email"
-                                            formControlName="email"
-                                            [disabled]="true"
-                                            class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white cursor-not-allowed opacity-75"
-                                        />
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Email cannot be changed</p>
-                                    </div>
-                                    <div>
-                                        <label for="birthDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Birth Date</label>
-                                        <input
-                                            type="date"
-                                            id="birthDate"
-                                            formControlName="birthDate"
+                                            type="text"
+                                            id="name"
+                                            formControlName="name"
                                             class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
                                     </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+                                            <input
+                                                type="email"
+                                                id="email"
+                                                formControlName="email"
+                                                [disabled]="true"
+                                                class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white cursor-not-allowed opacity-75"
+                                            />
+                                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Email cannot be changed</p>
+                                        </div>
+                                        <div>
+                                            <label for="birthDate" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Birth Date</label>
+                                            <input
+                                                type="date"
+                                                id="birthDate"
+                                                formControlName="birthDate"
+                                                class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="sex" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sex</label>
+                                            <select
+                                                id="sex"
+                                                formControlName="sex"
+                                                class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                <option value="">Select Gender</option>
+                                                <option value="Male">Male</option>
+                                                <option value="Female">Female</option>
+                                                <option value="Other">Other</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="contactNumber" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contact Number</label>
+                                            <input
+                                                type="tel"
+                                                id="contactNumber"
+                                                formControlName="contactNumber"
+                                                placeholder="+63 9XX XXX XXXX"
+                                                class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            </div>
+
+                            <!-- Address Information -->
+                            <div class="px-6 py-6">
+                                <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Address</h2>
+                                <div class="space-y-4">
                                     <div>
-                                        <label for="sex" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Sex</label>
-                                        <select
-                                            id="sex"
-                                            formControlName="sex"
+                                        <label for="address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Street Address</label>
+                                        <input
+                                            type="text"
+                                            id="address"
+                                            formControlName="address"
                                             class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value="">Select Gender</option>
-                                            <option value="Male">Male</option>
-                                            <option value="Female">Female</option>
-                                            <option value="Other">Other</option>
-                                        </select>
+                                        />
+                                    </div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="barangay" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Barangay</label>
+                                            <input
+                                                type="text"
+                                                id="barangay"
+                                                formControlName="barangay"
+                                                class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label for="municipality" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Municipality</label>
+                                            <input
+                                                type="text"
+                                                id="municipality"
+                                                formControlName="municipality"
+                                                class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
                                     </div>
                                     <div>
-                                        <label for="contactNumber" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contact Number</label>
+                                        <label for="province" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Province</label>
                                         <input
-                                            type="tel"
-                                            id="contactNumber"
-                                            formControlName="contactNumber"
-                                            placeholder="+63 9XX XXX XXXX"
+                                            type="text"
+                                            id="province"
+                                            formControlName="province"
                                             class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Address Information -->
-                        <div class="px-6 py-6">
-                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Address</h2>
-                            <div class="space-y-4">
-                                <div>
-                                    <label for="address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Street Address</label>
-                                    <input
-                                        type="text"
-                                        id="address"
-                                        formControlName="address"
-                                        class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label for="barangay" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Barangay</label>
-                                        <input
-                                            type="text"
-                                            id="barangay"
-                                            formControlName="barangay"
-                                            class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
+                            <!-- Student-specific Fields -->
+                            @if (userRole === 'student') {
+                                <div class="px-6 py-6">
+                                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Student Information</h2>
+                                    <div class="space-y-4">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label for="grade" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Grade</label>
+                                                <input
+                                                    type="text"
+                                                    id="grade"
+                                                    formControlName="grade"
+                                                    [disabled]="true"
+                                                    class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white cursor-not-allowed opacity-75"
+                                                />
+                                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Managed by school</p>
+                                            </div>
+                                            <div>
+                                                <label for="section" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Section</label>
+                                                <input
+                                                    type="text"
+                                                    id="section"
+                                                    formControlName="section"
+                                                    [disabled]="true"
+                                                    class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white cursor-not-allowed opacity-75"
+                                                />
+                                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Managed by school</p>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label for="learningModality" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Learning Modality</label>
+                                            <input
+                                                type="text"
+                                                id="learningModality"
+                                                formControlName="learningModality"
+                                                [disabled]="true"
+                                                class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white cursor-not-allowed opacity-75"
+                                            />
+                                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Managed by school</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label for="municipality" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Municipality</label>
-                                        <input
-                                            type="text"
-                                            id="municipality"
-                                            formControlName="municipality"
-                                            class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
+                                </div>
+                            }
+
+                            <!-- Admin-specific Fields -->
+                            @if (userRole === 'admin' || userRole === 'super-admin') {
+                                <div class="px-6 py-6">
+                                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Admin Information</h2>
+                                    <div class="space-y-4">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label for="adminID" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Admin ID</label>
+                                                <input
+                                                    type="text"
+                                                    id="adminID"
+                                                    formControlName="adminID"
+                                                    [disabled]="true"
+                                                    class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white cursor-not-allowed opacity-75"
+                                                />
+                                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated</p>
+                                            </div>
+                                            <div>
+                                                <label for="department" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Department</label>
+                                                <input
+                                                    type="text"
+                                                    id="department"
+                                                    formControlName="department"
+                                                    class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div>
-                                    <label for="province" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Province</label>
-                                    <input
-                                        type="text"
-                                        id="province"
-                                        formControlName="province"
-                                        class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
+                            }
+
+                            <!-- Form Actions -->
+                            <div class="px-6 py-6 flex gap-3">
+                                <button type="submit" [disabled]="isUpdating" class="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                    @if (isUpdating) {
+                                        <i class="pi pi-spin pi-spinner mr-2"></i>Saving...
+                                    } @else {
+                                        <i class="pi pi-save mr-2"></i>Save Changes
+                                    }
+                                </button>
+                                <button
+                                    type="button"
+                                    (click)="resetForm()"
+                                    [disabled]="isUpdating"
+                                    class="px-6 py-2 bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-white rounded-lg font-medium hover:bg-gray-400 dark:hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <i class="pi pi-times mr-2"></i>Cancel
+                                </button>
                             </div>
-                        </div>
-
-                        <!-- Student-specific Fields -->
-                        @if (userRole === 'student') {
-                        <div class="px-6 py-6">
-                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Student Information</h2>
-                            <div class="space-y-4">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label for="grade" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Grade</label>
-                                        <input
-                                            type="text"
-                                            id="grade"
-                                            formControlName="grade"
-                                            [disabled]="true"
-                                            class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white cursor-not-allowed opacity-75"
-                                        />
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Managed by school</p>
-                                    </div>
-                                    <div>
-                                        <label for="section" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Section</label>
-                                        <input
-                                            type="text"
-                                            id="section"
-                                            formControlName="section"
-                                            [disabled]="true"
-                                            class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white cursor-not-allowed opacity-75"
-                                        />
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Managed by school</p>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label for="learningModality" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Learning Modality</label>
-                                    <input
-                                        type="text"
-                                        id="learningModality"
-                                        formControlName="learningModality"
-                                        [disabled]="true"
-                                        class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white cursor-not-allowed opacity-75"
-                                    />
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Managed by school</p>
-                                </div>
-                            </div>
-                        </div>
-                        }
-
-                        <!-- Admin-specific Fields -->
-                        @if (userRole === 'admin' || userRole === 'super-admin') {
-                        <div class="px-6 py-6">
-                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Admin Information</h2>
-                            <div class="space-y-4">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label for="adminID" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Admin ID</label>
-                                        <input
-                                            type="text"
-                                            id="adminID"
-                                            formControlName="adminID"
-                                            [disabled]="true"
-                                            class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white cursor-not-allowed opacity-75"
-                                        />
-                                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated</p>
-                                    </div>
-                                    <div>
-                                        <label for="department" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Department</label>
-                                        <input
-                                            type="text"
-                                            id="department"
-                                            formControlName="department"
-                                            class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        }
-
-                        <!-- Form Actions -->
-                        <div class="px-6 py-6 flex gap-3">
-                            <button
-                                type="submit"
-                                [disabled]="isUpdating"
-                                class="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                @if (isUpdating) {
-                                <i class="pi pi-spin pi-spinner mr-2"></i>Saving...
-                                } @else {
-                                <i class="pi pi-save mr-2"></i>Save Changes
-                                }
-                            </button>
-                            <button
-                                type="button"
-                                (click)="resetForm()"
-                                [disabled]="isUpdating"
-                                class="px-6 py-2 bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-white rounded-lg font-medium hover:bg-gray-400 dark:hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <i class="pi pi-times mr-2"></i>Cancel
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                        </form>
+                    </div>
                 }
 
                 <!-- Change Password Tab -->
                 @if (activeTab === 'password') {
-                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden">
-                    <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="p-6">
-                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Change Your Password</h2>
-                        
-                        <div class="space-y-4 max-w-md">
-                            <div>
-                                <label for="currentPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Password</label>
-                                <input
-                                    type="password"
-                                    id="currentPassword"
-                                    formControlName="currentPassword"
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                                @if (passwordForm.get('currentPassword')?.hasError('required') && passwordForm.get('currentPassword')?.touched) {
-                                <p class="text-red-500 dark:text-red-400 text-sm mt-1">Current password is required</p>
-                                }
-                            </div>
-                            <div>
-                                <label for="newPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">New Password</label>
-                                <input
-                                    type="password"
-                                    id="newPassword"
-                                    formControlName="newPassword"
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Password must be at least 6 characters</p>
-                                @if (passwordForm.get('newPassword')?.hasError('minlength') && passwordForm.get('newPassword')?.touched) {
-                                <p class="text-red-500 dark:text-red-400 text-sm mt-1">Password must be at least 6 characters</p>
-                                }
-                            </div>
-                            <div>
-                                <label for="confirmPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirm New Password</label>
-                                <input
-                                    type="password"
-                                    id="confirmPassword"
-                                    formControlName="confirmPassword"
-                                    class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                                @if (passwordForm.hasError('passwordMismatch') && passwordForm.get('confirmPassword')?.touched) {
-                                <p class="text-red-500 dark:text-red-400 text-sm mt-1">Passwords do not match</p>
-                                }
-                            </div>
-                        </div>
+                    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden">
+                        <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="p-6">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-6">Change Your Password</h2>
 
-                        <div class="flex gap-3 mt-6">
-                            <button
-                                type="submit"
-                                [disabled]="passwordForm.invalid || isUpdating"
-                                class="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                @if (isUpdating) {
-                                <i class="pi pi-spin pi-spinner mr-2"></i>Updating...
-                                } @else {
-                                <i class="pi pi-check mr-2"></i>Change Password
-                                }
-                            </button>
-                            <button
-                                type="button"
-                                (click)="resetPasswordForm()"
-                                [disabled]="isUpdating"
-                                class="px-6 py-2 bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-white rounded-lg font-medium hover:bg-gray-400 dark:hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <i class="pi pi-times mr-2"></i>Cancel
-                            </button>
-                        </div>
-                    </form>
-                </div>
+                            <div class="space-y-4 max-w-md">
+                                <div>
+                                    <label for="currentPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Password</label>
+                                    <input
+                                        type="password"
+                                        id="currentPassword"
+                                        formControlName="currentPassword"
+                                        class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                    @if (passwordForm.get('currentPassword')?.hasError('required') && passwordForm.get('currentPassword')?.touched) {
+                                        <p class="text-red-500 dark:text-red-400 text-sm mt-1">Current password is required</p>
+                                    }
+                                </div>
+                                <div>
+                                    <label for="newPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">New Password</label>
+                                    <input
+                                        type="password"
+                                        id="newPassword"
+                                        formControlName="newPassword"
+                                        class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Password must be at least 6 characters</p>
+                                    @if (passwordForm.get('newPassword')?.hasError('minlength') && passwordForm.get('newPassword')?.touched) {
+                                        <p class="text-red-500 dark:text-red-400 text-sm mt-1">Password must be at least 6 characters</p>
+                                    }
+                                </div>
+                                <div>
+                                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Confirm New Password</label>
+                                    <input
+                                        type="password"
+                                        id="confirmPassword"
+                                        formControlName="confirmPassword"
+                                        class="w-full px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                    @if (passwordForm.hasError('passwordMismatch') && passwordForm.get('confirmPassword')?.touched) {
+                                        <p class="text-red-500 dark:text-red-400 text-sm mt-1">Passwords do not match</p>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="flex gap-3 mt-6">
+                                <button type="submit" [disabled]="passwordForm.invalid || isUpdating" class="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                    @if (isUpdating) {
+                                        <i class="pi pi-spin pi-spinner mr-2"></i>Updating...
+                                    } @else {
+                                        <i class="pi pi-check mr-2"></i>Change Password
+                                    }
+                                </button>
+                                <button
+                                    type="button"
+                                    (click)="resetPasswordForm()"
+                                    [disabled]="isUpdating"
+                                    class="px-6 py-2 bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-white rounded-lg font-medium hover:bg-gray-400 dark:hover:bg-slate-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <i class="pi pi-times mr-2"></i>Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 }
             </div>
         </div>

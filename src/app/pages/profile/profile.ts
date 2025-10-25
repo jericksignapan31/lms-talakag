@@ -54,16 +54,8 @@ interface UserProfile {
 
                         <!-- Action Buttons -->
                         <div class="flex gap-3 mt-6">
-                            <button
-                                (click)="goToAccountSettings()"
-                                class="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
-                            >
-                                <i class="pi pi-pencil mr-2"></i>Edit Profile
-                            </button>
-                            <button
-                                (click)="goBack()"
-                                class="px-6 py-2 bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-white rounded-lg font-medium hover:bg-gray-400 dark:hover:bg-slate-600 transition-colors"
-                            >
+                            <button (click)="goToAccountSettings()" class="px-6 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"><i class="pi pi-pencil mr-2"></i>Edit Profile</button>
+                            <button (click)="goBack()" class="px-6 py-2 bg-gray-300 dark:bg-slate-700 text-gray-800 dark:text-white rounded-lg font-medium hover:bg-gray-400 dark:hover:bg-slate-600 transition-colors">
                                 <i class="pi pi-arrow-left mr-2"></i>Back
                             </button>
                         </div>
@@ -133,57 +125,57 @@ interface UserProfile {
 
                         <!-- Student-specific Information -->
                         @if (userProfile.role === 'student') {
-                        <div class="px-6 py-4">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Student Information</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">LRN (Learner Reference Number)</label>
-                                    <p class="mt-1 text-gray-900 dark:text-gray-100">{{ userProfile.lrn || 'N/A' }}</p>
-                                </div>
-                                <div>
-                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Grade</label>
-                                    <p class="mt-1 text-gray-900 dark:text-gray-100">{{ userProfile.grade || 'N/A' }}</p>
-                                </div>
-                                <div>
-                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Section</label>
-                                    <p class="mt-1 text-gray-900 dark:text-gray-100">{{ userProfile.section || 'N/A' }}</p>
-                                </div>
-                                <div>
-                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Learning Modality</label>
-                                    <p class="mt-1 text-gray-900 dark:text-gray-100">{{ userProfile.learningModality || 'N/A' }}</p>
+                            <div class="px-6 py-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Student Information</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">LRN (Learner Reference Number)</label>
+                                        <p class="mt-1 text-gray-900 dark:text-gray-100">{{ userProfile.lrn || 'N/A' }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Grade</label>
+                                        <p class="mt-1 text-gray-900 dark:text-gray-100">{{ userProfile.grade || 'N/A' }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Section</label>
+                                        <p class="mt-1 text-gray-900 dark:text-gray-100">{{ userProfile.section || 'N/A' }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Learning Modality</label>
+                                        <p class="mt-1 text-gray-900 dark:text-gray-100">{{ userProfile.learningModality || 'N/A' }}</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
                         }
 
                         <!-- Teacher-specific Information -->
                         @if (userProfile.role === 'teacher') {
-                        <div class="px-6 py-4">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Teacher Information</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Teacher ID</label>
-                                    <p class="mt-1 text-gray-900 dark:text-gray-100">{{ userProfile.teacherID || 'N/A' }}</p>
+                            <div class="px-6 py-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Teacher Information</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Teacher ID</label>
+                                        <p class="mt-1 text-gray-900 dark:text-gray-100">{{ userProfile.teacherID || 'N/A' }}</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
                         }
 
                         <!-- Admin-specific Information -->
                         @if (userProfile.role === 'admin' || userProfile.role === 'super-admin') {
-                        <div class="px-6 py-4">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Admin Information</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Admin ID</label>
-                                    <p class="mt-1 text-gray-900 dark:text-gray-100">{{ userProfile.adminID || 'N/A' }}</p>
-                                </div>
-                                <div>
-                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Department</label>
-                                    <p class="mt-1 text-gray-900 dark:text-gray-100">{{ userProfile.department || 'N/A' }}</p>
+                            <div class="px-6 py-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Admin Information</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Admin ID</label>
+                                        <p class="mt-1 text-gray-900 dark:text-gray-100">{{ userProfile.adminID || 'N/A' }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Department</label>
+                                        <p class="mt-1 text-gray-900 dark:text-gray-100">{{ userProfile.department || 'N/A' }}</p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
                         }
                     </div>
                 </div>
