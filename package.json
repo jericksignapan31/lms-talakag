@@ -15,6 +15,7 @@
     "private": true,
     "dependencies": {
         "@angular/animations": "^20",
+        "@angular/cdk": "^20.2.10",
         "@angular/common": "^20",
         "@angular/compiler": "^20",
         "@angular/core": "^20",
@@ -22,6 +23,7 @@
         "@angular/platform-browser": "^20",
         "@angular/platform-browser-dynamic": "^20",
         "@angular/router": "^20",
+        "@angular/service-worker": "^20.3.7",
         "@primeuix/themes": "^1.2.1",
         "@tailwindcss/postcss": "^4.1.11",
         "chart.js": "4.4.2",
@@ -56,6 +58,7 @@
         "karma-jasmine-html-reporter": "~2.1.0",
         "postcss": "^8.5.6",
         "prettier": "^3.6.2",
+        "sharp": "^0.34.4",
         "tailwindcss": "^4.1.11",
         "typescript": "~5.8.3"
     }
