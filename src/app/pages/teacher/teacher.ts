@@ -575,27 +575,76 @@ export class TeacherComponent implements OnInit {
 
     // Reset Password
     async resetPassword(teacher: Teacher) {
+        console.log('🔑 Reset Password button clicked for teacher:', teacher.name, 'ID:', teacher.teacherID);
+
         this.confirmationService.confirm({
             message: `Are you sure you want to reset password for ${teacher.name}? A password reset email will be sent to ${teacher.email}.`,
             header: 'Reset Password',
             icon: 'pi pi-exclamation-triangle',
             accept: async () => {
+                console.log('✅ Admin confirmed password reset for:', teacher.name);
                 try {
                     // Send password reset email
                     const email = `${teacher.teacherID}@lms.talakag`;
+                    console.log('📧 Preparing to send password reset email to:', email);
+                    console.log('📌 Teacher Details:', {
+                        name: teacher.name,
+                        teacherID: teacher.teacherID,
+                        authEmail: email,
+                        contactEmail: teacher.email
+                    });
+
+                    // Verify email is not empty
+                    if (!email || email.trim() === '') {
+                        throw new Error('Email address is empty');
+                    }
+
+                    console.log('⏳ Calling Firebase sendPasswordResetEmail()...');
+                    const startTime = performance.now();
+
                     await this.firebaseAuthService.sendPasswordResetEmailToUser(email);
 
+                    const endTime = performance.now();
+                    console.log(`✅ Email sent successfully! (${(endTime - startTime).toFixed(2)}ms)`);
+                    console.log('📧 Email delivery confirmed - teacher should receive reset link shortly');
+
                     // Show success modal
+                    console.log('🎉 Showing success modal');
                     this.resetSuccessData = {
                         name: teacher.name,
                         email: teacher.email
                     };
+                    console.log('📋 Reset success data:', this.resetSuccessData);
+                    console.log('🔓 displayResetSuccessDialog set to true');
                     this.displayResetSuccessDialog = true;
+
+                    // Also show a toast notification for immediate feedback
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Success',
+                        detail: `Password reset email sent to ${email}`,
+                        life: 5000
+                    });
                 } catch (error: any) {
+                    console.error('❌ Error in password reset:', error);
+                    console.error('Error Code:', error.code);
+                    console.error('Error Message:', error.message);
+                    console.error('Full Error:', error);
+
+                    let errorMessage = 'Failed to send reset email';
+                    if (error.code === 'auth/user-not-found') {
+                        errorMessage = 'User account not found. Make sure the teacher account exists.';
+                    } else if (error.code === 'auth/invalid-email') {
+                        errorMessage = 'Invalid email format.';
+                    } else if (error.code === 'auth/too-many-requests') {
+                        errorMessage = 'Too many password reset requests. Please try again later.';
+                    }
+
                     this.messageService.add({
                         severity: 'error',
                         summary: 'Error',
-                        detail: 'Failed to send reset email: ' + error.message
+                        detail: errorMessage + ' (' + error.message + ')',
+                        sticky: true
                     });
                 }
             }

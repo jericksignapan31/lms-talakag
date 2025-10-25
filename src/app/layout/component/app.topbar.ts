@@ -51,9 +51,9 @@ import { AuthService } from '../../pages/auth/auth.service';
             <div class="layout-topbar-menu hidden lg:block">
                 <div class="layout-topbar-menu-content">
                     <div class="relative inline-block">
-                        <button type="button" class="layout-topbar-action" (click)="toggleUserMenu()">
-                            <i class="pi pi-user"></i>
-                            <span>{{ currentUserName }}</span>
+                        <button type="button" class="text-left hover:opacity-80 transition-opacity cursor-pointer" (click)="toggleUserMenu()">
+                            <span>{{ currentUserName }}</span> <br />
+                            <span class="text-xs text-gray-600 dark:text-gray-400 capitalize ">{{ userRole }}</span>
                         </button>
                         <div *ngIf="isUserMenuOpen" class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-700 rounded-lg shadow-lg z-50">
                             <button type="button" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2" (click)="goToProfile()">
@@ -80,6 +80,7 @@ export class AppTopbar {
     items!: MenuItem[];
     userMenuItems: MenuItem[] = [];
     currentUserName: string = 'User';
+    userRole: string = 'User';
     isUserMenuOpen: boolean = false;
     private authService = inject(AuthService);
     private router = inject(Router);
@@ -108,8 +109,10 @@ export class AppTopbar {
         const user = this.authService.currentUser;
         if (user) {
             this.currentUserName = user.name || user.email?.split('@')[0] || 'User';
+            this.userRole = user.role || 'User';
         } else {
             this.currentUserName = 'User';
+            this.userRole = 'User';
         }
     }
 

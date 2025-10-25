@@ -8,6 +8,10 @@ import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ToolbarModule } from 'primeng/toolbar';
+import { TagModule } from 'primeng/tag';
+import { InputIconModule } from 'primeng/inputicon';
+import { IconFieldModule } from 'primeng/iconfield';
 import { FirestoreStudentService, Student } from '../../services/firestore-student.service';
 import { LmsAuthService } from '../../services/lms-auth.service';
 import { FirebaseAuthService } from '../../services/firebase-auth.service';
@@ -15,74 +19,119 @@ import { FirebaseAuthService } from '../../services/firebase-auth.service';
 @Component({
     selector: 'app-students',
     standalone: true,
-    imports: [CommonModule, FormsModule, TableModule, ButtonModule, InputTextModule, DialogModule, ToastModule, ConfirmDialogModule],
+    imports: [CommonModule, FormsModule, TableModule, ButtonModule, InputTextModule, DialogModule, ToastModule, ConfirmDialogModule, ToolbarModule, TagModule, InputIconModule, IconFieldModule],
     providers: [MessageService, ConfirmationService],
     template: `
-        <div class="card">
-            <h2>Students Management</h2>
+        <p-toast />
+        <p-confirmDialog />
 
-            <div class="toolbar">
-                <div class="toolbar-left">
-                    <button pButton pRipple label="Add New Student" icon="pi pi-plus" class="p-button-success mr-2" (click)="openAddDialog()"></button>
-                    <button pButton pRipple label="Import Excel" icon="pi pi-upload" class="p-button-info mr-2" (click)="fileInput.click()"></button>
-                    <button pButton pRipple label="Refresh" icon="pi pi-refresh" (click)="loadStudents()"></button>
-                    <input #fileInput type="file" hidden accept=".xlsx,.xls,.csv" (change)="onFileSelected($event)" />
+        <p-toolbar styleClass="mb-6">
+            <ng-template #start>
+                <p-button label="New" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="openAddDialog()" />
+                <p-button severity="secondary" label="Delete" icon="pi pi-trash" outlined (onClick)="deleteSelectedStudents()" [disabled]="!selectedStudents || !selectedStudents.length" />
+            </ng-template>
+
+            <ng-template #end>
+                <p-button label="Import CSV" icon="pi pi-upload" severity="success" (onClick)="fileInput.click()" />
+                <input #fileInput type="file" hidden accept=".csv,.xls,.xlsx" (change)="onFileSelected($event)" />
+            </ng-template>
+        </p-toolbar>
+
+        <p-table
+            #dt
+            [value]="filteredStudents"
+            [rows]="10"
+            [paginator]="true"
+            [globalFilterFields]="['lrn', 'name', 'email', 'grade']"
+            [tableStyle]="{ 'min-width': '100%' }"
+            [(selection)]="selectedStudents"
+            [rowHover]="true"
+            dataKey="id"
+            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} students"
+            [showCurrentPageReport]="true"
+            [rowsPerPageOptions]="[10, 20, 30]"
+            scrollable="true"
+            scrollHeight="flex"
+        >
+            <ng-template #caption>
+                <div class="flex items-center justify-between">
+                    <h5 class="m-0">👨‍🎓 Student Management</h5>
+                    <p-iconfield>
+                        <p-inputicon styleClass="pi pi-search" />
+                        <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Search students..." />
+                    </p-iconfield>
                 </div>
+            </ng-template>
 
-                <div class="toolbar-right">
-                    <span class="p-input-icon-left">
-                        <i class="pi pi-search"></i>
-                        <input pInputText type="text" [(ngModel)]="searchValue" (ngModelChange)="onSearchChange()" placeholder="Search by LRN, Name, or Email..." class="w-full" />
-                    </span>
-                    <button pButton pRipple icon="pi pi-times" class="p-button-rounded p-button-text" (click)="clearSearch()" [disabled]="!searchValue" title="Clear search"></button>
-                </div>
-            </div>
+            <ng-template #header>
+                <tr>
+                    <th style="width: 3rem">
+                        <p-tableHeaderCheckbox />
+                    </th>
+                    <th pSortableColumn="lrn" style="min-width: 10rem">
+                        LRN
+                        <p-sortIcon field="lrn" />
+                    </th>
+                    <th pSortableColumn="name" style="min-width: 12rem">
+                        Name
+                        <p-sortIcon field="name" />
+                    </th>
+                    <th pSortableColumn="email" style="min-width: 14rem">
+                        Email
+                        <p-sortIcon field="email" />
+                    </th>
+                    <th pSortableColumn="grade" style="min-width: 8rem">
+                        Grade
+                        <p-sortIcon field="grade" />
+                    </th>
+                    <th pSortableColumn="section" style="min-width: 8rem">
+                        Section
+                        <p-sortIcon field="section" />
+                    </th>
+                    <th pSortableColumn="sex" style="min-width: 8rem">
+                        Sex
+                        <p-sortIcon field="sex" />
+                    </th>
+                    <th pSortableColumn="contactNumber" style="min-width: 12rem">
+                        Contact Number
+                        <p-sortIcon field="contactNumber" />
+                    </th>
+                    <th pSortableColumn="role" style="min-width: 8rem">
+                        Role
+                        <p-sortIcon field="role" />
+                    </th>
+                    <th style="min-width: 8rem">Actions</th>
+                </tr>
+            </ng-template>
 
-            <p-table [value]="filteredStudents" responsiveLayout="scroll" [paginator]="true" [rows]="10" [globalFilterFields]="['lrn', 'name', 'email']" [scrollable]="true" scrollHeight="flex">
-                <ng-template pTemplate="header">
-                    <tr>
-                        <th pSortableColumn="lrn" style="width: 100px">LRN <p-sortIcon field="lrn"></p-sortIcon></th>
-                        <th pSortableColumn="name" style="width: 120px">Name <p-sortIcon field="name"></p-sortIcon></th>
-                        <th pSortableColumn="grade" style="width: 90px">Grade <p-sortIcon field="grade"></p-sortIcon></th>
-                        <th pSortableColumn="section" style="width: 80px">Section <p-sortIcon field="section"></p-sortIcon></th>
-                        <th pSortableColumn="sex" style="width: 70px">Sex <p-sortIcon field="sex"></p-sortIcon></th>
-                        <th pSortableColumn="birthDate" style="width: 110px">Birth Date <p-sortIcon field="birthDate"></p-sortIcon></th>
-                        <th pSortableColumn="address" style="width: 120px">Address <p-sortIcon field="address"></p-sortIcon></th>
-                        <th pSortableColumn="barangay" style="width: 100px">Barangay <p-sortIcon field="barangay"></p-sortIcon></th>
-                        <th pSortableColumn="municipality" style="width: 110px">Municipality <p-sortIcon field="municipality"></p-sortIcon></th>
-                        <th pSortableColumn="province" style="width: 100px">Province <p-sortIcon field="province"></p-sortIcon></th>
-                        <th pSortableColumn="contactNumber" style="width: 120px">Contact Number <p-sortIcon field="contactNumber"></p-sortIcon></th>
-                        <th pSortableColumn="learningModality" style="width: 130px">Learning Modality <p-sortIcon field="learningModality"></p-sortIcon></th>
-                        <th pSortableColumn="role" style="width: 80px">Role <p-sortIcon field="role"></p-sortIcon></th>
-                        <th style="width: 80px">Actions</th>
-                    </tr>
-                </ng-template>
-
-                <ng-template pTemplate="body" let-student>
-                    <tr>
-                        <td style="width: 100px">{{ student.lrn }}</td>
-                        <td style="width: 120px">{{ student.name }}</td>
-                        <td style="width: 90px">{{ student.grade }}</td>
-                        <td style="width: 80px">{{ student.section }}</td>
-                        <td style="width: 70px">{{ student.sex }}</td>
-                        <td style="width: 110px">{{ student.birthDate }}</td>
-                        <td style="width: 120px">{{ student.address }}</td>
-                        <td style="width: 100px">{{ student.barangay }}</td>
-                        <td style="width: 110px">{{ student.municipality }}</td>
-                        <td style="width: 100px">{{ student.province }}</td>
-                        <td style="width: 120px">{{ student.contactNumber }}</td>
-                        <td style="width: 130px">{{ student.learningModality }}</td>
-                        <td style="width: 80px">{{ student.role }}</td>
-                        <td style="width: 120px">
-                            <button pButton pRipple type="button" icon="pi pi-eye" class="p-button-rounded p-button-secondary mr-2" (click)="openProfileDialog(student)" title="View Profile"></button>
-                            <button pButton pRipple type="button" icon="pi pi-key" class="p-button-rounded p-button-warning mr-2" (click)="resetPassword(student)" title="Reset Password"></button>
-                            <button pButton pRipple type="button" icon="pi pi-pencil" class="p-button-rounded p-button-info mr-2" (click)="openEditDialog(student)" title="Edit"></button>
-                            <button pButton pRipple type="button" icon="pi pi-trash" class="p-button-rounded p-button-danger" (click)="deleteStudent(student.id)" title="Delete"></button>
-                        </td>
-                    </tr>
-                </ng-template>
-            </p-table>
-        </div>
+            <ng-template #body let-student>
+                <tr>
+                    <td>
+                        <p-tableCheckbox [value]="student" />
+                    </td>
+                    <td>
+                        <p-tag [value]="student.lrn" severity="info" />
+                    </td>
+                    <td>
+                        <span class="font-semibold">{{ student.name }}</span>
+                    </td>
+                    <td>{{ student.email }}</td>
+                    <td>{{ student.grade }}</td>
+                    <td>{{ student.section }}</td>
+                    <td>{{ student.sex }}</td>
+                    <td>{{ student.contactNumber }}</td>
+                    <td>
+                        <p-tag [value]="student.role" severity="warning" />
+                    </td>
+                    <td>
+                        <p-button icon="pi pi-eye" severity="info" class="mr-2" (onClick)="openProfileDialog(student)" [text]="true" [rounded]="true" pTooltip="View Profile" tooltipPosition="top" />
+                        <p-button icon="pi pi-key" severity="secondary" class="mr-2" (onClick)="resetPassword(student)" [text]="true" [rounded]="true" pTooltip="Reset Password" tooltipPosition="top" />
+                        <p-button icon="pi pi-pencil" severity="success" class="mr-2" (onClick)="openEditDialog(student)" [text]="true" [rounded]="true" pTooltip="Edit" tooltipPosition="top" />
+                        <p-button icon="pi pi-trash" severity="danger" (onClick)="deleteStudent(student.id)" [text]="true" [rounded]="true" pTooltip="Delete" tooltipPosition="top" />
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
 
         <!-- Profile View Dialog -->
         <p-dialog [(visible)]="displayProfileDialog" [header]="selectedStudent?.name + ' - Student Profile'" [modal]="true" [style]="{ width: '600px' }">
@@ -169,7 +218,7 @@ import { FirebaseAuthService } from '../../services/firebase-auth.service';
         </p-dialog>
 
         <!-- Reset Password Success Modal -->
-        <p-dialog [(visible)]="displayResetSuccessDialog" [header]="'✅ Password Reset Sent'" [modal]="true" [style]="{ width: '500px' }" [closable]="true">
+        <p-dialog [(visible)]="displayResetSuccessDialog" [header]="'✅ Password Reset Sent'" [modal]="true" [style]="{ width: '500px', zIndex: 10000 }" [baseZIndex]="10000" [closable]="true">
             <div class="reset-success-content">
                 <div class="success-icon">
                     <i class="pi pi-check-circle"></i>
@@ -552,6 +601,7 @@ export class Students implements OnInit {
     isEditMode = false;
     editingId: string | null = null;
     selectedStudent: Student | null = null;
+    selectedStudents: Student[] = [];
 
     studentForm: Student = {
         lrn: '',
@@ -586,6 +636,11 @@ export class Students implements OnInit {
         this.filterStudents();
     }
 
+    onGlobalFilter(table: any, event: Event) {
+        const searchValue = (event.target as HTMLInputElement).value;
+        table.filterGlobal(searchValue, 'contains');
+    }
+
     filterStudents() {
         if (!this.searchValue || this.searchValue.trim() === '') {
             this.filteredStudents = [...this.students];
@@ -611,6 +666,32 @@ export class Students implements OnInit {
         this.filterStudents();
     }
 
+    deleteSelectedStudents() {
+        if (!this.selectedStudents || this.selectedStudents.length === 0) {
+            this.messageService.add({ severity: 'warn', summary: 'No Selection', detail: 'Please select students to delete' });
+            return;
+        }
+
+        this.confirmationService.confirm({
+            message: `Delete ${this.selectedStudents.length} selected student(s)?`,
+            header: 'Confirm Delete',
+            icon: 'pi pi-exclamation-triangle',
+            accept: async () => {
+                try {
+                    for (const student of this.selectedStudents) {
+                        if (student.id) {
+                            await this.deleteStudent(student.id);
+                        }
+                    }
+                    this.selectedStudents = [];
+                    this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Selected students deleted successfully' });
+                } catch (error: any) {
+                    this.messageService.add({ severity: 'error', summary: 'Error', detail: error.message });
+                }
+            }
+        });
+    }
+
     openAddDialog() {
         this.isEditMode = false;
         this.editingId = null;
@@ -633,11 +714,15 @@ export class Students implements OnInit {
                 return;
             }
             if (this.isEditMode && this.editingId) {
+                // Set email when updating
+                this.studentForm.email = 'indulanglibrary@gmail.com';
                 await this.studentService.updateStudent(this.editingId, this.studentForm);
                 this.messageService.add({ severity: 'success', summary: 'Success', detail: 'Student updated successfully' });
             } else {
                 // Add role field for role-based access
                 this.studentForm.role = 'student';
+                // Set email for new student
+                this.studentForm.email = 'indulanglibrary@gmail.com';
                 // Create Firebase Authentication account first
                 const uid = await this.authService.createStudentAccount(this.studentForm.lrn);
                 // Then save student data to Firestore
@@ -705,27 +790,76 @@ export class Students implements OnInit {
 
     // Reset Password
     async resetPassword(student: Student) {
+        console.log('🔑 Reset Password button clicked for student:', student.name, 'LRN:', student.lrn);
+
         this.confirmationService.confirm({
-            message: `Are you sure you want to reset password for ${student.name}? A password reset email will be sent to ${student.email}.`,
+            message: `Are you sure you want to reset the password?`,
             header: 'Reset Password',
             icon: 'pi pi-exclamation-triangle',
             accept: async () => {
+                console.log('✅ Admin confirmed password reset for:', student.name);
                 try {
                     // Send password reset email
                     const email = `${student.lrn}@lms.talakag`;
+                    console.log('📧 Preparing to send password reset email to:', email);
+                    console.log('📌 Student Details:', {
+                        name: student.name,
+                        lrn: student.lrn,
+                        authEmail: email,
+                        contactEmail: student.email
+                    });
+
+                    // Verify email is not empty
+                    if (!email || email.trim() === '') {
+                        throw new Error('Email address is empty');
+                    }
+
+                    console.log('⏳ Calling Firebase sendPasswordResetEmail()...');
+                    const startTime = performance.now();
+
                     await this.firebaseAuthService.sendPasswordResetEmailToUser(email);
 
+                    const endTime = performance.now();
+                    console.log(`✅ Email sent successfully! (${(endTime - startTime).toFixed(2)}ms)`);
+                    console.log('📧 Email delivery confirmed - student should receive reset link shortly');
+
                     // Show success modal
+                    console.log('🎉 Showing success modal');
                     this.resetSuccessData = {
                         name: student.name,
                         email: student.email
                     };
+                    console.log('📋 Reset success data:', this.resetSuccessData);
+                    console.log('🔓 displayResetSuccessDialog set to true');
                     this.displayResetSuccessDialog = true;
+
+                    // Also show a toast notification for immediate feedback
+                    this.messageService.add({
+                        severity: 'success',
+                        summary: 'Success',
+                        detail: `Password reset email sent to ${email}`,
+                        life: 5000
+                    });
                 } catch (error: any) {
+                    console.error('❌ Error in password reset:', error);
+                    console.error('Error Code:', error.code);
+                    console.error('Error Message:', error.message);
+                    console.error('Full Error:', error);
+
+                    let errorMessage = 'Failed to send reset email';
+                    if (error.code === 'auth/user-not-found') {
+                        errorMessage = 'User account not found. Make sure the student account exists.';
+                    } else if (error.code === 'auth/invalid-email') {
+                        errorMessage = 'Invalid email format.';
+                    } else if (error.code === 'auth/too-many-requests') {
+                        errorMessage = 'Too many password reset requests. Please try again later.';
+                    }
+
                     this.messageService.add({
                         severity: 'error',
                         summary: 'Error',
-                        detail: 'Failed to send reset email: ' + error.message
+                        detail: errorMessage + ' (' + error.message + ')',
+                        sticky: true
                     });
                 }
             }
@@ -774,7 +908,7 @@ export class Students implements OnInit {
                         const student: Student = {
                             lrn: values[headers.indexOf('lrn')] || '',
                             name: values[headers.indexOf('name')] || '',
-                            email: values[headers.indexOf('email')] || '',
+                            email: 'indulanglibrary@gmail.com',
                             grade: values[headers.indexOf('grade')] || '',
                             section: values[headers.indexOf('section')] || '',
                             sex: values[headers.indexOf('sex')] || '',
@@ -908,7 +1042,7 @@ export class Students implements OnInit {
                         const student: Student = {
                             lrn: values[headers.indexOf('lrn')] || '',
                             name: values[headers.indexOf('name')] || '',
-                            email: values[headers.indexOf('email')] || '',
+                            email: 'indulanglibrary@gmail.com',
                             grade: values[headers.indexOf('grade')] || '',
                             section: values[headers.indexOf('section')] || '',
                             sex: values[headers.indexOf('sex')] || '',
@@ -951,6 +1085,8 @@ export class Students implements OnInit {
 
             for (const student of importedStudents) {
                 try {
+                    // Set email for imported student
+                    student.email = 'indulanglibrary@gmail.com';
                     // Create Firebase account
                     await this.authService.createStudentAccount(student.lrn);
                     // Add student to Firestore
