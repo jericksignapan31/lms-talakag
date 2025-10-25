@@ -6,15 +6,17 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
-import { MessageService } from 'primeng/api';
+import { MessageService, ConfirmationService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { FirestoreStudentService, Student } from '../../services/firestore-student.service';
 import { LmsAuthService } from '../../services/lms-auth.service';
+import { FirebaseAuthService } from '../../services/firebase-auth.service';
 
 @Component({
     selector: 'app-students',
     standalone: true,
-    imports: [CommonModule, FormsModule, TableModule, ButtonModule, InputTextModule, DialogModule, ToastModule],
-    providers: [MessageService],
+    imports: [CommonModule, FormsModule, TableModule, ButtonModule, InputTextModule, DialogModule, ToastModule, ConfirmDialogModule],
+    providers: [MessageService, ConfirmationService],
     template: `
         <div class="card">
             <h2>Students Management</h2>
@@ -71,7 +73,9 @@ import { LmsAuthService } from '../../services/lms-auth.service';
                         <td style="width: 120px">{{ student.contactNumber }}</td>
                         <td style="width: 130px">{{ student.learningModality }}</td>
                         <td style="width: 80px">{{ student.role }}</td>
-                        <td style="width: 80px">
+                        <td style="width: 120px">
+                            <button pButton pRipple type="button" icon="pi pi-eye" class="p-button-rounded p-button-secondary mr-2" (click)="openProfileDialog(student)" title="View Profile"></button>
+                            <button pButton pRipple type="button" icon="pi pi-key" class="p-button-rounded p-button-warning mr-2" (click)="resetPassword(student)" title="Reset Password"></button>
                             <button pButton pRipple type="button" icon="pi pi-pencil" class="p-button-rounded p-button-info mr-2" (click)="openEditDialog(student)" title="Edit"></button>
                             <button pButton pRipple type="button" icon="pi pi-trash" class="p-button-rounded p-button-danger" (click)="deleteStudent(student.id)" title="Delete"></button>
                         </td>
@@ -80,6 +84,131 @@ import { LmsAuthService } from '../../services/lms-auth.service';
             </p-table>
         </div>
 
+        <!-- Profile View Dialog -->
+        <p-dialog [(visible)]="displayProfileDialog" [header]="selectedStudent?.name + ' - Student Profile'" [modal]="true" [style]="{ width: '600px' }">
+            <div *ngIf="selectedStudent" class="profile-view">
+                <div class="profile-section">
+                    <h3>Personal Information</h3>
+                    <div class="profile-grid">
+                        <div class="profile-field">
+                            <label>LRN:</label>
+                            <span>{{ selectedStudent.lrn }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Name:</label>
+                            <span>{{ selectedStudent.name }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Sex:</label>
+                            <span>{{ selectedStudent.sex }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Birth Date:</label>
+                            <span>{{ selectedStudent.birthDate }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h3>Academic Information</h3>
+                    <div class="profile-grid">
+                        <div class="profile-field">
+                            <label>Grade:</label>
+                            <span>{{ selectedStudent.grade }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Section:</label>
+                            <span>{{ selectedStudent.section }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Learning Modality:</label>
+                            <span>{{ selectedStudent.learningModality }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h3>Contact Information</h3>
+                    <div class="profile-grid">
+                        <div class="profile-field">
+                            <label>Email:</label>
+                            <span>{{ selectedStudent.email }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Contact Number:</label>
+                            <span>{{ selectedStudent.contactNumber }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h3>Address Information</h3>
+                    <div class="profile-grid">
+                        <div class="profile-field">
+                            <label>Address:</label>
+                            <span>{{ selectedStudent.address }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Barangay:</label>
+                            <span>{{ selectedStudent.barangay }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Municipality:</label>
+                            <span>{{ selectedStudent.municipality }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Province:</label>
+                            <span>{{ selectedStudent.province }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <ng-template pTemplate="footer">
+                <button pButton label="Close" (click)="displayProfileDialog = false" class="p-button-text"></button>
+            </ng-template>
+        </p-dialog>
+
+        <!-- Reset Password Success Modal -->
+        <p-dialog [(visible)]="displayResetSuccessDialog" [header]="'✅ Password Reset Sent'" [modal]="true" [style]="{ width: '500px' }" [closable]="true">
+            <div class="reset-success-content">
+                <div class="success-icon">
+                    <i class="pi pi-check-circle"></i>
+                </div>
+
+                <div class="success-message">
+                    <h3>Password Reset Email Sent!</h3>
+                    <p>An email with password reset instructions has been sent to:</p>
+                    <p class="email-highlight">{{ resetSuccessData?.email }}</p>
+                </div>
+
+                <div class="student-info">
+                    <p><strong>Student:</strong> {{ resetSuccessData?.name }}</p>
+                </div>
+
+                <div class="instructions">
+                    <h4>Next Steps:</h4>
+                    <ol>
+                        <li>Check the student's email (including spam/junk folder)</li>
+                        <li>Click the password reset link in the email</li>
+                        <li>Follow the instructions to create a new password</li>
+                        <li>The student can now login with their new password</li>
+                    </ol>
+                </div>
+
+                <div class="info-box">
+                    <p>
+                        <i class="pi pi-info-circle"></i>
+                        The password reset link will expire in <strong>1 hour</strong>
+                    </p>
+                </div>
+            </div>
+
+            <ng-template pTemplate="footer">
+                <button pButton label="Close" (click)="displayResetSuccessDialog = false" class="p-button-success"></button>
+            </ng-template>
+        </p-dialog>
+
+        <!-- Add/Edit Student Dialog -->
         <p-dialog [(visible)]="displayDialog" [header]="isEditMode ? 'Edit Student' : 'Add Student'" [modal]="true">
             <div class="form">
                 <div><label>LRN</label><input pInputText [(ngModel)]="studentForm.lrn" [disabled]="isEditMode" /></div>
@@ -260,6 +389,148 @@ import { LmsAuthService } from '../../services/lms-auth.service';
                     width: 100%;
                 }
             }
+        `,
+        `
+            :host ::ng-deep .profile-view {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+                padding: 1rem 0;
+            }
+
+            :host ::ng-deep .profile-section {
+                border-bottom: 1px solid #e0e0e0;
+                padding-bottom: 1rem;
+            }
+
+            :host ::ng-deep .profile-section h3 {
+                margin: 0 0 1rem 0;
+                color: #333;
+                font-size: 1rem;
+                font-weight: 600;
+            }
+
+            :host ::ng-deep .profile-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+            }
+
+            :host ::ng-deep .profile-field {
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+
+            :host ::ng-deep .profile-field label {
+                font-weight: 600;
+                color: #666;
+                font-size: 0.85rem;
+            }
+
+            :host ::ng-deep .profile-field span {
+                color: #333;
+                padding: 0.5rem 0;
+            }
+        `,
+        `
+            :host ::ng-deep .reset-success-content {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+                padding: 1rem 0;
+            }
+
+            :host ::ng-deep .success-icon {
+                text-align: center;
+                font-size: 3rem;
+                color: #22c55e;
+                margin: 1rem 0;
+            }
+
+            :host ::ng-deep .success-message {
+                text-align: center;
+            }
+
+            :host ::ng-deep .success-message h3 {
+                margin: 0 0 0.5rem 0;
+                color: #22c55e;
+                font-size: 1.3rem;
+                font-weight: 600;
+            }
+
+            :host ::ng-deep .success-message p {
+                margin: 0.5rem 0;
+                color: #666;
+                font-size: 0.95rem;
+            }
+
+            :host ::ng-deep .email-highlight {
+                background-color: #f0fdf4 !important;
+                padding: 0.75rem;
+                border-radius: 4px;
+                font-weight: 600;
+                color: #16a34a !important;
+                font-family: monospace;
+                font-size: 0.9rem;
+                margin: 1rem 0 !important;
+            }
+
+            :host ::ng-deep .student-info {
+                background-color: #f8fafc;
+                padding: 1rem;
+                border-left: 4px solid #22c55e;
+                border-radius: 4px;
+            }
+
+            :host ::ng-deep .student-info p {
+                margin: 0.5rem 0;
+                color: #333;
+            }
+
+            :host ::ng-deep .instructions {
+                background-color: #f0fdf4;
+                padding: 1rem;
+                border-radius: 4px;
+            }
+
+            :host ::ng-deep .instructions h4 {
+                margin: 0 0 0.5rem 0;
+                color: #16a34a;
+                font-size: 0.95rem;
+            }
+
+            :host ::ng-deep .instructions ol {
+                margin: 0.5rem 0;
+                padding-left: 1.5rem;
+                color: #333;
+            }
+
+            :host ::ng-deep .instructions li {
+                margin: 0.3rem 0;
+                font-size: 0.9rem;
+            }
+
+            :host ::ng-deep .info-box {
+                background-color: #eff6ff;
+                border: 1px solid #bfdbfe;
+                border-radius: 4px;
+                padding: 1rem;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            :host ::ng-deep .info-box i {
+                color: #3b82f6;
+                font-size: 1.2rem;
+            }
+
+            :host ::ng-deep .info-box p {
+                margin: 0;
+                color: #1e40af;
+                font-size: 0.9rem;
+            }
         `
     ]
 })
@@ -267,14 +538,20 @@ export class Students implements OnInit {
     private studentService = inject(FirestoreStudentService);
     private messageService = inject(MessageService);
     private authService = inject(LmsAuthService);
+    private firebaseAuthService = inject(FirebaseAuthService);
+    private confirmationService = inject(ConfirmationService);
 
     students: Student[] = [];
     filteredStudents: Student[] = [];
     searchValue: string = '';
     displayDialog = false;
+    displayProfileDialog = false;
+    displayResetSuccessDialog = false;
+    resetSuccessData: { name: string; email: string | undefined } | null = null;
     saving = false;
     isEditMode = false;
     editingId: string | null = null;
+    selectedStudent: Student | null = null;
 
     studentForm: Student = {
         lrn: '',
@@ -418,6 +695,41 @@ export class Students implements OnInit {
         this.displayDialog = false;
         this.isEditMode = false;
         this.editingId = null;
+    }
+
+    // View Profile Dialog
+    openProfileDialog(student: Student) {
+        this.selectedStudent = student;
+        this.displayProfileDialog = true;
+    }
+
+    // Reset Password
+    async resetPassword(student: Student) {
+        this.confirmationService.confirm({
+            message: `Are you sure you want to reset password for ${student.name}? A password reset email will be sent to ${student.email}.`,
+            header: 'Reset Password',
+            icon: 'pi pi-exclamation-triangle',
+            accept: async () => {
+                try {
+                    // Send password reset email
+                    const email = `${student.lrn}@lms.talakag`;
+                    await this.firebaseAuthService.sendPasswordResetEmailToUser(email);
+
+                    // Show success modal
+                    this.resetSuccessData = {
+                        name: student.name,
+                        email: student.email
+                    };
+                    this.displayResetSuccessDialog = true;
+                } catch (error: any) {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'Failed to send reset email: ' + error.message
+                    });
+                }
+            }
+        });
     }
 
     onFileSelected(event: any) {

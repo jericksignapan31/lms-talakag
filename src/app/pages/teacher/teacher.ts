@@ -19,6 +19,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { InputMaskModule } from 'primeng/inputmask';
 import { FirestoreTeacherService, Teacher } from '../../services/firestore-teacher.service';
 import { LmsAuthService } from '../../services/lms-auth.service';
+import { FirebaseAuthService } from '../../services/firebase-auth.service';
 
 interface Column {
     field: string;
@@ -154,13 +155,110 @@ interface ExportColumn {
                         <p-tag [value]="teacher.role" severity="warning" />
                     </td>
                     <td>
-                        <p-button icon="pi pi-pencil" severity="success" class="mr-2" (onClick)="editTeacher(teacher)" [text]="true" [rounded]="true" />
-                        <p-button icon="pi pi-trash" severity="danger" (onClick)="deleteTeacher(teacher)" [text]="true" [rounded]="true" />
+                        <p-button icon="pi pi-eye" severity="info" class="mr-2" (onClick)="openProfileDialog(teacher)" [text]="true" [rounded]="true" pTooltip="View Profile" tooltipPosition="top" />
+                        <p-button icon="pi pi-key" severity="secondary" class="mr-2" (onClick)="resetPassword(teacher)" [text]="true" [rounded]="true" pTooltip="Reset Password" tooltipPosition="top" />
+                        <p-button icon="pi pi-pencil" severity="success" class="mr-2" (onClick)="editTeacher(teacher)" [text]="true" [rounded]="true" pTooltip="Edit" tooltipPosition="top" />
+                        <p-button icon="pi pi-trash" severity="danger" (onClick)="deleteTeacher(teacher)" [text]="true" [rounded]="true" pTooltip="Delete" tooltipPosition="top" />
                     </td>
                 </tr>
             </ng-template>
         </p-table>
 
+        <!-- Profile View Dialog -->
+        <p-dialog [(visible)]="displayProfileDialog" [header]="selectedTeacher?.name + ' - Teacher Profile'" [modal]="true" [style]="{ width: '600px' }">
+            <div *ngIf="selectedTeacher" class="profile-view">
+                <div class="profile-section">
+                    <h3>Personal Information</h3>
+                    <div class="profile-grid">
+                        <div class="profile-field">
+                            <label>Teacher ID:</label>
+                            <span>{{ selectedTeacher.teacherID }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Name:</label>
+                            <span>{{ selectedTeacher.name }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Birth Date:</label>
+                            <span>{{ selectedTeacher.birthDate }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Department/Unit:</label>
+                            <span>{{ selectedTeacher.department }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h3>Contact Information</h3>
+                    <div class="profile-grid">
+                        <div class="profile-field">
+                            <label>Email:</label>
+                            <span>{{ selectedTeacher.email }}</span>
+                        </div>
+                        <div class="profile-field">
+                            <label>Contact Number:</label>
+                            <span>{{ selectedTeacher.contactNumber }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-section">
+                    <h3>Role Information</h3>
+                    <div class="profile-grid">
+                        <div class="profile-field">
+                            <label>Role:</label>
+                            <span>{{ selectedTeacher.role }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <ng-template pTemplate="footer">
+                <p-button label="Close" icon="pi pi-times" [text]="true" (onClick)="displayProfileDialog = false" />
+            </ng-template>
+        </p-dialog>
+
+        <!-- Reset Password Success Modal -->
+        <p-dialog [(visible)]="displayResetSuccessDialog" [header]="'✅ Password Reset Sent'" [modal]="true" [style]="{ width: '500px' }" [closable]="true">
+            <div class="reset-success-content">
+                <div class="success-icon">
+                    <i class="pi pi-check-circle"></i>
+                </div>
+
+                <div class="success-message">
+                    <h3>Password Reset Email Sent!</h3>
+                    <p>An email with password reset instructions has been sent to:</p>
+                    <p class="email-highlight">{{ resetSuccessData?.email }}</p>
+                </div>
+
+                <div class="student-info">
+                    <p><strong>Teacher:</strong> {{ resetSuccessData?.name }}</p>
+                </div>
+
+                <div class="instructions">
+                    <h4>Next Steps:</h4>
+                    <ol>
+                        <li>Check the teacher's email (including spam/junk folder)</li>
+                        <li>Click the password reset link in the email</li>
+                        <li>Follow the instructions to create a new password</li>
+                        <li>The teacher can now login with their new password</li>
+                    </ol>
+                </div>
+
+                <div class="info-box">
+                    <p>
+                        <i class="pi pi-info-circle"></i>
+                        The password reset link will expire in <strong>1 hour</strong>
+                    </p>
+                </div>
+            </div>
+
+            <ng-template pTemplate="footer">
+                <p-button label="Close" icon="pi pi-check" severity="success" [text]="true" (onClick)="displayResetSuccessDialog = false" />
+            </ng-template>
+        </p-dialog>
+
+        <!-- Edit Teacher Dialog -->
         <p-dialog [(visible)]="teacherDialog" [header]="submitLabel" [modal]="true" class="p-fluid">
             <ng-template #content>
                 <div class="field">
@@ -199,21 +297,170 @@ interface ExportColumn {
                 <p-button label="Save" icon="pi pi-check" [text]="true" (onClick)="saveTeacher()" />
             </ng-template>
         </p-dialog>
-    `
+    `,
+    styles: [
+        `
+            :host ::ng-deep .profile-view {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+                padding: 1rem 0;
+            }
+
+            :host ::ng-deep .profile-section {
+                border-bottom: 1px solid #e0e0e0;
+                padding-bottom: 1rem;
+            }
+
+            :host ::ng-deep .profile-section h3 {
+                margin: 0 0 1rem 0;
+                color: #333;
+                font-size: 1rem;
+                font-weight: 600;
+            }
+
+            :host ::ng-deep .profile-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+            }
+
+            :host ::ng-deep .profile-field {
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+
+            :host ::ng-deep .profile-field label {
+                font-weight: 600;
+                color: #666;
+                font-size: 0.85rem;
+            }
+
+            :host ::ng-deep .profile-field span {
+                color: #333;
+                padding: 0.5rem 0;
+            }
+        `,
+        `
+            :host ::ng-deep .reset-success-content {
+                display: flex;
+                flex-direction: column;
+                gap: 1.5rem;
+                padding: 1rem 0;
+            }
+
+            :host ::ng-deep .success-icon {
+                text-align: center;
+                font-size: 3rem;
+                color: #22c55e;
+                margin: 1rem 0;
+            }
+
+            :host ::ng-deep .success-message {
+                text-align: center;
+            }
+
+            :host ::ng-deep .success-message h3 {
+                margin: 0 0 0.5rem 0;
+                color: #22c55e;
+                font-size: 1.3rem;
+                font-weight: 600;
+            }
+
+            :host ::ng-deep .success-message p {
+                margin: 0.5rem 0;
+                color: #666;
+                font-size: 0.95rem;
+            }
+
+            :host ::ng-deep .email-highlight {
+                background-color: #f0fdf4 !important;
+                padding: 0.75rem;
+                border-radius: 4px;
+                font-weight: 600;
+                color: #16a34a !important;
+                font-family: monospace;
+                font-size: 0.9rem;
+                margin: 1rem 0 !important;
+            }
+
+            :host ::ng-deep .student-info {
+                background-color: #f8fafc;
+                padding: 1rem;
+                border-left: 4px solid #22c55e;
+                border-radius: 4px;
+            }
+
+            :host ::ng-deep .student-info p {
+                margin: 0.5rem 0;
+                color: #333;
+            }
+
+            :host ::ng-deep .instructions {
+                background-color: #f0fdf4;
+                padding: 1rem;
+                border-radius: 4px;
+            }
+
+            :host ::ng-deep .instructions h4 {
+                margin: 0 0 0.5rem 0;
+                color: #16a34a;
+                font-size: 0.95rem;
+            }
+
+            :host ::ng-deep .instructions ol {
+                margin: 0.5rem 0;
+                padding-left: 1.5rem;
+                color: #333;
+            }
+
+            :host ::ng-deep .instructions li {
+                margin: 0.3rem 0;
+                font-size: 0.9rem;
+            }
+
+            :host ::ng-deep .info-box {
+                background-color: #eff6ff;
+                border: 1px solid #bfdbfe;
+                border-radius: 4px;
+                padding: 1rem;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            :host ::ng-deep .info-box i {
+                color: #3b82f6;
+                font-size: 1.2rem;
+            }
+
+            :host ::ng-deep .info-box p {
+                margin: 0;
+                color: #1e40af;
+                font-size: 0.9rem;
+            }
+        `
+    ]
 })
 export class TeacherComponent implements OnInit {
     private teacherService = inject(FirestoreTeacherService);
     private messageService = inject(MessageService);
     private confirmationService = inject(ConfirmationService);
     private authService = inject(LmsAuthService);
+    private firebaseAuthService = inject(FirebaseAuthService);
 
     @ViewChild('dt') dataTable?: Table;
 
     teachers = signal<Teacher[]>([]);
     teacher: Teacher = this.getEmptyTeacher();
     selectedTeachers: Teacher[] | null = null;
+    selectedTeacher: Teacher | null = null;
     submitted: boolean = false;
     teacherDialog: boolean = false;
+    displayProfileDialog: boolean = false;
+    displayResetSuccessDialog: boolean = false;
+    resetSuccessData: { name: string; email: string | undefined } | null = null;
     cols: Column[] = [];
     exportColumns: ExportColumn[] = [];
     submitLabel: string = '';
@@ -318,6 +565,41 @@ export class TeacherComponent implements OnInit {
     hideDialog() {
         this.teacherDialog = false;
         this.submitted = false;
+    }
+
+    // View Profile Dialog
+    openProfileDialog(teacher: Teacher) {
+        this.selectedTeacher = teacher;
+        this.displayProfileDialog = true;
+    }
+
+    // Reset Password
+    async resetPassword(teacher: Teacher) {
+        this.confirmationService.confirm({
+            message: `Are you sure you want to reset password for ${teacher.name}? A password reset email will be sent to ${teacher.email}.`,
+            header: 'Reset Password',
+            icon: 'pi pi-exclamation-triangle',
+            accept: async () => {
+                try {
+                    // Send password reset email
+                    const email = `${teacher.teacherID}@lms.talakag`;
+                    await this.firebaseAuthService.sendPasswordResetEmailToUser(email);
+
+                    // Show success modal
+                    this.resetSuccessData = {
+                        name: teacher.name,
+                        email: teacher.email
+                    };
+                    this.displayResetSuccessDialog = true;
+                } catch (error: any) {
+                    this.messageService.add({
+                        severity: 'error',
+                        summary: 'Error',
+                        detail: 'Failed to send reset email: ' + error.message
+                    });
+                }
+            }
+        });
     }
 
     deleteTeacher(teacher: Teacher) {
