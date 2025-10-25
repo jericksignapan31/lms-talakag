@@ -1,5 +1,6 @@
 export const environment = {
     production: true,
+    appUrl: 'https://lms-talakag.vercel.app',
     apiUrl: 'https://api.lms-talakag.com',
     firebase: {
         apiKey: 'AIzaSyA594uHCFrjW8dzFz6HL70SKd-XkG45caI',
