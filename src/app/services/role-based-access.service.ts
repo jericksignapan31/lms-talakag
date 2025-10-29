@@ -11,6 +11,7 @@ export interface RolePermissions {
     canAccessBorrowing: boolean;
     canAccessBorrowingManagement: boolean;
     canAccessPenalties: boolean;
+    canAccessReports: boolean;
     canChangeBorrowerType: boolean;
     canFilterBorrowings: boolean;
     canFilterPenalties: boolean;
@@ -58,6 +59,7 @@ export class RoleBasedAccessService {
                 canAccessBorrowing: true,
                 canAccessBorrowingManagement: true,
                 canAccessPenalties: true,
+                canAccessReports: true,
                 canChangeBorrowerType: true,
                 canFilterBorrowings: true,
                 canFilterPenalties: true,
@@ -71,6 +73,7 @@ export class RoleBasedAccessService {
                 canAccessBorrowing: true,
                 canAccessBorrowingManagement: true,
                 canAccessPenalties: true,
+                canAccessReports: true,
                 canChangeBorrowerType: true,
                 canFilterBorrowings: true,
                 canFilterPenalties: true,
@@ -84,6 +87,7 @@ export class RoleBasedAccessService {
                 canAccessBorrowing: true,
                 canAccessBorrowingManagement: false,
                 canAccessPenalties: true,
+                canAccessReports: true,
                 canChangeBorrowerType: false,
                 canFilterBorrowings: false,
                 canFilterPenalties: false,
@@ -97,6 +101,7 @@ export class RoleBasedAccessService {
                 canAccessBorrowing: true,
                 canAccessBorrowingManagement: false,
                 canAccessPenalties: false,
+                canAccessReports: false,
                 canChangeBorrowerType: false,
                 canFilterBorrowings: false,
                 canFilterPenalties: false,

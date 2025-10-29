@@ -53,6 +53,15 @@ export class AppMenu implements OnInit {
             });
         }
 
+        // Reports - admin and teacher only
+        if (perms.canAccessReports) {
+            pagesItems.push({
+                label: 'Reports & Analytics',
+                icon: 'pi pi-fw pi-chart-bar',
+                routerLink: ['/pages/reports']
+            });
+        }
+
         // Student Users - admin only
         if (perms.canAccessStudentUsers) {
             pagesItems.push({

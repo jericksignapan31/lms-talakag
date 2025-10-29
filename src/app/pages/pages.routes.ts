@@ -10,12 +10,14 @@ import { Dashboard } from './dashboard/dashboard';
 import { RoleGuard } from './auth/role.guard';
 import { Profile } from './profile/profile';
 import { AccountSettings } from './account-settings/account-settings';
+import { ReportsComponent } from './reports/reports.component';
 
 export default [
     { path: 'dashboard', component: Dashboard, canActivate: [RoleGuard] },
     { path: 'documentation', component: Documentation, canActivate: [RoleGuard] },
     { path: 'crud', component: Crud, canActivate: [RoleGuard], data: { permission: 'canAccessBooks' } },
     { path: 'borrowing', component: BorrowingComponent, canActivate: [RoleGuard], data: { permission: 'canAccessBorrowing' } },
+    { path: 'reports', component: ReportsComponent, canActivate: [RoleGuard], data: { permission: 'canAccessReports' } },
     { path: 'teacher', component: TeacherComponent, canActivate: [RoleGuard], data: { permission: 'canAccessTeacherUsers' } },
     { path: 'admin', component: AdminComponent, canActivate: [RoleGuard], data: { permission: 'canAccessAdminUsers' } },
     { path: 'empty', component: Empty, canActivate: [RoleGuard] },
