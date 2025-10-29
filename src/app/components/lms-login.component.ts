@@ -17,7 +17,7 @@ import { LmsAuthService } from '../services/lms-auth.service';
     template: `
         <div class="login-container">
             <div class="login-card">
-                <h1>LMS Talakag</h1>
+                <h1>Indulang Intergated School LMS</h1>
                 <h2>Student Login</h2>
 
                 <div *ngIf="messages.length > 0" [ngClass]="'alert-' + messages[0].severity" class="alert">
