@@ -25,7 +25,10 @@ import { AuthService } from './auth.service';
                             <div class="mb-8 flex justify-center items-center">
                                 <img src="https://firebasestorage.googleapis.com/v0/b/mobi-pms.appspot.com/o/IISLogo.png?alt=media&token=db14b8f8-4be9-4941-b61c-568a92c0a3a1" alt="IIS Logo" class="w-24 h-24 shrink-0 object-contain" />
                             </div>
-                            <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4">Welcome to <br> Indulang Intergated School LMS!</div>
+                            <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4">
+                                Welcome to <br />
+                                Indulang Intergated School LMS!
+                            </div>
                             <span class="text-muted-color font-medium">Sign in to continue</span>
                         </div>
 
@@ -82,12 +85,11 @@ export class Login {
     username: string = '';
     password: string = '';
     checked: boolean = false;
-    userType: string = 'student';
+    userType: string = 'admin';
     loading = false;
     error: string | null = null;
 
     userTypeOptions = [
-        { label: '👤 Student', value: 'student' },
         { label: '👨‍🏫 Teacher', value: 'teacher' },
         { label: '⚙️ Admin', value: 'admin' }
     ];
