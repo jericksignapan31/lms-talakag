@@ -17,9 +17,9 @@ import { AuthService } from '../../pages/auth/auth.service';
                 <i class="pi pi-bars"></i>
             </button>
             <a class="layout-topbar-logo">
-                <img src="https://firebasestorage.googleapis.com/v0/b/mobi-pms.appspot.com/o/IISLogo.png?alt=media&token=db14b8f8-4be9-4941-b61c-568a92c0a3a1" alt="IIS Logo" class="w-13 h-13 shrink-0 object-contain" />
+                <img src="https://firebasestorage.googleapis.com/v0/b/mobi-pms.appspot.com/o/IISLogo.png?alt=media&token=db14b8f8-4be9-4941-b61c-568a92c0a3a1" alt="IIS Logo" class="w-10 h-10 shrink-0 object-contain" />
 
-                <span>LMS - TALAKAG</span>
+                <span style="font-size: 0.95rem;">LMS- Indulang Integrated School</span>
             </a>
         </div>
 
