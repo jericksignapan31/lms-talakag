@@ -83,10 +83,21 @@ export class FirestoreBookService {
     // DELETE
     async deleteBook(id: string): Promise<void> {
         try {
+            console.log('🔥 Firestore: Attempting to delete book with ID:', id);
             const docRef = doc(this.firestore, this.collectionName, id);
+
+            // First verify the document exists
+            const docSnap = await getDoc(docRef);
+            if (!docSnap.exists()) {
+                console.error('❌ Document does not exist:', id);
+                throw new Error('Book not found in database');
+            }
+
+            console.log('📄 Document found, proceeding with deletion...');
             await deleteDoc(docRef);
+            console.log('✅ Firestore: Book successfully deleted from database');
         } catch (error) {
-            console.error('Error deleting book:', error);
+            console.error('❌ Firestore delete error:', error);
             throw error;
         }
     }

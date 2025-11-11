@@ -159,7 +159,7 @@ interface ExportColumn {
                 </tr>
             </ng-template>
             <ng-template #body let-book>
-                <tr>
+                <tr (click)="logBookData(book)" style="cursor: pointer;">
                     <td style="width: 3rem" *ngIf="isAdmin()">
                         <p-tableCheckbox [value]="book" />
                     </td>
@@ -177,7 +177,7 @@ interface ExportColumn {
                     <td style="min-width: 8rem">{{ book.year }}</td>
                     <td style="min-width: 14rem">{{ book.remarks }}</td>
                     <td style="min-width: 12rem">{{ book.isbn }}</td>
-                    <td *ngIf="isAdmin()">
+                    <td *ngIf="isAdmin()" (click)="$event.stopPropagation()">
                         <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true" (click)="editBook(book)" />
                         <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true" (click)="deleteBook(book)" />
                     </td>
@@ -311,17 +311,60 @@ export class Crud implements OnInit {
         this.initializeColumns();
     }
 
+    /**
+     * DEBUG HELPER: Call this in browser console to check book IDs
+     * Example: window['app'].checkBookIds()
+     */
+    checkBookIds() {
+        console.log('📚 Checking book IDs...');
+        const books = this.books();
+        console.log(`Total books: ${books.length}`);
+
+        books.forEach((book, index) => {
+            console.log(`[${index + 1}] ID: "${book.id}" | Title: "${book.title}"`);
+            // Check if ID looks like Firestore auto-generated (20+ chars)
+            if (book.id && book.id.length < 15) {
+                console.warn(`⚠️ Suspicious ID detected: "${book.id}" - might be custom ID`);
+            }
+        });
+    }
+
+    /**
+     * Log book data when row is clicked
+     */
+    logBookData(book: Book) {
+        console.log('📖 ROW CLICKED - Book Data:');
+        console.log('====================================');
+        console.table({
+            'ID': book.id,
+            'ID Type': typeof book.id,
+            'ID Length': book.id?.length,
+            'Title': book.title,
+            'Accession Number': book.accessionNumber,
+            'Author': book.author,
+            'ISBN': book.isbn,
+            'Price': book.price
+        });
+        console.log('Full Object:', book);
+        console.log('====================================');
+    }
+
     async loadBooksFromFirestore() {
         try {
+            console.log('📚 Loading books from Firestore...');
             const booksData = await this.bookService.getBooks();
+            console.log('📚 Books loaded:', booksData.length);
+
+            // Update signal with new data
             this.books.set(booksData);
+            console.log('✅ Signal updated with', this.books().length, 'books');
         } catch (error) {
+            console.error('❌ Error loading books:', error);
             this.messageService.add({
                 severity: 'error',
                 summary: 'Error',
                 detail: 'Failed to load books from Firestore'
             });
-            console.error('Error loading books:', error);
         }
     }
 
@@ -391,29 +434,47 @@ export class Crud implements OnInit {
             icon: 'pi pi-exclamation-triangle',
             accept: async () => {
                 try {
+                    console.log('🗑️ Deleting selected books:', this.selectedBooks?.length);
+                    console.log('📚 Current books count:', this.books().length);
+
                     if (this.selectedBooks) {
                         for (const book of this.selectedBooks) {
                             if (book.id) {
+                                console.log('Deleting book ID:', book.id, 'Title:', book.title);
                                 await this.bookService.deleteBook(book.id);
                             }
                         }
                     }
+
+                    console.log('✅ All books deleted, waiting for propagation...');
+                    // Wait a bit for Firestore to propagate
+                    await new Promise((resolve) => setTimeout(resolve, 500));
+
+                    // Reload from Firestore
                     await this.loadBooksFromFirestore();
+                    console.log('📚 New books count:', this.books().length);
+
+                    // Force change detection
+                    this.books.update((books) => [...books]);
+
+                    // Clear selection
                     this.selectedBooks = null;
+
                     this.messageService.add({
                         severity: 'success',
                         summary: 'Successful',
                         detail: 'Books Deleted',
                         life: 3000
                     });
+                    console.log('✅ Books reloaded successfully');
                 } catch (error) {
+                    console.error('❌ Error deleting books:', error);
                     this.messageService.add({
                         severity: 'error',
                         summary: 'Error',
-                        detail: 'Failed to delete books',
-                        life: 3000
+                        detail: `Failed to delete books: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                        life: 5000
                     });
-                    console.error('Error deleting books:', error);
                 }
             }
         });
@@ -425,17 +486,46 @@ export class Crud implements OnInit {
     }
 
     deleteBook(book: Book) {
+        // Log the complete book data when clicked
+        console.log('🖱️ DELETE BUTTON CLICKED - Book Data:');
+        console.log('====================================');
+        console.log('Full Book Object:', book);
+        console.log('Book ID:', book.id);
+        console.log('Book ID Type:', typeof book.id);
+        console.log('Book ID Length:', book.id?.length);
+        console.log('Book Title:', book.title);
+        console.log('Book Accession Number:', book.accessionNumber);
+        console.log('====================================');
+        
         this.confirmationService.confirm({
             message: 'Are you sure you want to delete ' + book.title + '?',
             header: 'Confirm',
             icon: 'pi pi-exclamation-triangle',
             accept: async () => {
                 try {
+                    console.log('🗑️ Deleting book with ID:', book.id);
+                    console.log('📚 Current books count:', this.books().length);
+
                     if (book.id) {
+                        // Delete from Firestore
                         await this.bookService.deleteBook(book.id);
+                        console.log('✅ Book deleted from Firestore');
+
+                        // Wait a bit for Firestore to propagate
+                        await new Promise((resolve) => setTimeout(resolve, 500));
+
+                        // Reload from Firestore to ensure UI is synced
+                        await this.loadBooksFromFirestore();
+                        console.log('✅ Books reloaded from Firestore');
+                        console.log('📚 New books count:', this.books().length);
+
+                        // Force change detection
+                        this.books.update((books) => [...books]);
                     }
-                    await this.loadBooksFromFirestore();
+
+                    // Clear current book
                     this.book = {} as Book;
+
                     this.messageService.add({
                         severity: 'success',
                         summary: 'Successful',
@@ -443,13 +533,13 @@ export class Crud implements OnInit {
                         life: 3000
                     });
                 } catch (error) {
+                    console.error('❌ Error deleting book:', error);
                     this.messageService.add({
                         severity: 'error',
                         summary: 'Error',
-                        detail: 'Failed to delete book',
-                        life: 3000
+                        detail: `Failed to delete book: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                        life: 5000
                     });
-                    console.error('Error deleting book:', error);
                 }
             }
         });
@@ -647,7 +737,6 @@ export class Crud implements OnInit {
             }
 
             const importedBooks: Book[] = [];
-            let id = this.books().length > 0 ? Math.max(...this.books().map((b) => parseInt(b.id || '0') || 0)) + 1 : 1;
 
             const getValue = (row: (string | number)[], key: string): string => {
                 const index = headerIndex[key];
@@ -672,7 +761,7 @@ export class Crud implements OnInit {
                 const price = normalizedPrice ? parseFloat(normalizedPrice) || 0 : 0;
 
                 const book: Book = {
-                    id: id.toString(),
+                    // Don't set id here - let Firestore auto-generate it
                     accessionNumber,
                     dateInput: this.formatDateForInput(getValue(values, 'date input')),
                     callNumber: getValue(values, 'call number'),
@@ -690,7 +779,6 @@ export class Crud implements OnInit {
                 };
 
                 importedBooks.push(book);
-                id++;
             }
 
             if (importedBooks.length > 0) {
