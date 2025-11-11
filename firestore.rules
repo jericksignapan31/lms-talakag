@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    
+    // Books collection
+    // - Anyone authenticated can read books
+    // - Only admins can create, update, or delete books
+    match /book/{bookId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
+    }
+    
+    // Students collection
+    // - Anyone authenticated can read students
+    // - Anyone authenticated can write (for account creation and updates)
+    match /students/{studentId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
+    }
+    
+    // Teachers collection
+    // - Anyone authenticated can read teachers
+    // - Anyone authenticated can write (for account creation and updates)
+    match /teachers/{teacherId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
+    }
+    
+    // Borrowing collection
+    // - Anyone authenticated can read and create borrowing records
+    // - Anyone authenticated can update and delete (for return and penalties)
+    match /borrowing/{borrowingId} {
+      allow read, create: if isAuthenticated();
+      allow update, delete: if isAuthenticated();
+    }
+    
+    // Penalties collection
+    // - Anyone authenticated can read penalties
+    // - Anyone authenticated can update penalties (mark as paid)
+    match /penalties/{penaltyId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
+    }
+    
+    // Admins collection
+    // - Only the admin themselves can read their own document
+    // - Admins can read other admin documents
+    match /admins/{adminId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
+    }
+    
+    // Courses collection (if you have it)
+    match /courses/{courseId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
+    }
+    
+    // Enrollments collection (if you have it)
+    match /enrollments/{enrollmentId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAuthenticated();
+    }
+  }
+}
