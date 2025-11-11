@@ -336,14 +336,14 @@ export class Crud implements OnInit {
         console.log('📖 ROW CLICKED - Book Data:');
         console.log('====================================');
         console.table({
-            'ID': book.id,
+            ID: book.id,
             'ID Type': typeof book.id,
             'ID Length': book.id?.length,
-            'Title': book.title,
+            Title: book.title,
             'Accession Number': book.accessionNumber,
-            'Author': book.author,
-            'ISBN': book.isbn,
-            'Price': book.price
+            Author: book.author,
+            ISBN: book.isbn,
+            Price: book.price
         });
         console.log('Full Object:', book);
         console.log('====================================');
@@ -496,7 +496,7 @@ export class Crud implements OnInit {
         console.log('Book Title:', book.title);
         console.log('Book Accession Number:', book.accessionNumber);
         console.log('====================================');
-        
+
         this.confirmationService.confirm({
             message: 'Are you sure you want to delete ' + book.title + '?',
             header: 'Confirm',
