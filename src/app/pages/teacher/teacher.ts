@@ -85,7 +85,7 @@ interface ExportColumn {
             dataKey="id"
             currentPageReportTemplate="Showing {first} to {last} of {totalRecords} teachers"
             [showCurrentPageReport]="true"
-            [rowsPerPageOptions]="[10, 20, 30]"
+            [rowsPerPageOptions]="[10, 20, 30, { showAll: 'All', value: 0 }]"
             scrollable="true"
             scrollHeight="flex"
         >

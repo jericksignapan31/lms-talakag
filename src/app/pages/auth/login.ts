@@ -69,7 +69,9 @@ import { AuthService } from './auth.service';
                                 <span class="font-medium no-underline ml-2 text-right cursor-pointer text-primary">Forgot password?</span>
                             </div>
                             <p-button label="Sign In" styleClass="w-full" [loading]="loading" [disabled]="!canSubmit || loading" (onClick)="onSubmit()"></p-button>
-                            <div *ngIf="error" class="text-red-500 mt-3">{{ error }}</div>
+                            @if (error) {
+                                <div class="text-red-500 mt-3">{{ error }}</div>
+                            }
                         </div>
                     </div>
                 </div>

@@ -55,21 +55,23 @@ import { AuthService } from '../../pages/auth/auth.service';
                             <span>{{ currentUserName }}</span> <br />
                             <span class="text-xs text-gray-600 dark:text-gray-400 capitalize ">{{ userRole }}</span>
                         </button>
-                        <div *ngIf="isUserMenuOpen" class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-700 rounded-lg shadow-lg z-50">
-                            <button type="button" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2" (click)="goToProfile()">
-                                <i class="pi pi-user text-sm"></i>
-                                <span>Profile</span>
-                            </button>
-                            <button type="button" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2" (click)="goToAccountSettings()">
-                                <i class="pi pi-cog text-sm"></i>
-                                <span>Account Settings</span>
-                            </button>
-                            <hr class="my-1 border-gray-200 dark:border-slate-600" />
-                            <button type="button" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2 text-red-600 dark:text-red-400" (click)="logout()">
-                                <i class="pi pi-sign-out text-sm"></i>
-                                <span>Logout</span>
-                            </button>
-                        </div>
+                        @if (isUserMenuOpen) {
+                            <div class="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-700 rounded-lg shadow-lg z-50">
+                                <button type="button" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2" (click)="goToProfile()">
+                                    <i class="pi pi-user text-sm"></i>
+                                    <span>Profile</span>
+                                </button>
+                                <button type="button" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2" (click)="goToAccountSettings()">
+                                    <i class="pi pi-cog text-sm"></i>
+                                    <span>Account Settings</span>
+                                </button>
+                                <hr class="my-1 border-gray-200 dark:border-slate-600" />
+                                <button type="button" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center gap-2 text-red-600 dark:text-red-400" (click)="logout()">
+                                    <i class="pi pi-sign-out text-sm"></i>
+                                    <span>Logout</span>
+                                </button>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>

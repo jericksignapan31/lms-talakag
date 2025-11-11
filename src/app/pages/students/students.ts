@@ -49,7 +49,7 @@ import { FirebaseAuthService } from '../../services/firebase-auth.service';
             dataKey="id"
             currentPageReportTemplate="Showing {first} to {last} of {totalRecords} students"
             [showCurrentPageReport]="true"
-            [rowsPerPageOptions]="[10, 20, 30]"
+            [rowsPerPageOptions]="[10, 20, 30, { showAll: 'All', value: 0 }]"
             scrollable="true"
             scrollHeight="flex"
         >
@@ -292,6 +292,17 @@ import { FirebaseAuthService } from '../../services/firebase-auth.service';
                 <button pButton label="Save" (click)="saveStudent()" [loading]="saving"></button>
             </ng-template>
         </p-dialog>
+
+        <!-- Progress Bar for Import -->
+        <div *ngIf="importInProgress" class="w-full my-4">
+            <div class="flex items-center gap-2">
+                <span class="font-semibold">Importing Students:</span>
+                <span>{{ importProgress }} / {{ importTotal }}</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded h-4 mt-2">
+                <div class="bg-blue-500 h-4 rounded" [style.width.%]="(importProgress / importTotal) * 100"></div>
+            </div>
+        </div>
 
         <p-toast></p-toast>
     `,
@@ -618,6 +629,10 @@ export class Students implements OnInit {
         contactNumber: '',
         learningModality: ''
     };
+
+    importInProgress: boolean = false;
+    importProgress: number = 0;
+    importTotal: number = 0;
 
     ngOnInit() {
         this.loadStudents();
@@ -1082,36 +1097,69 @@ export class Students implements OnInit {
         try {
             let importedCount = 0;
             let skippedCount = 0;
+            let errorCount = 0;
+            const totalStudents = importedStudents.length;
 
-            for (const student of importedStudents) {
+            // Show progress message
+            this.messageService.add({
+                severity: 'info',
+                summary: 'Import Starting',
+                detail: `Processing ${totalStudents} students... This may take a few minutes.`,
+                life: 5000
+            });
+
+            // Process students one by one with delay to avoid rate limiting
+            for (let i = 0; i < importedStudents.length; i++) {
+                const student = importedStudents[i];
+
                 try {
+                    console.log(`[${i + 1}/${totalStudents}] Processing: ${student.name} (${student.lrn})`);
+
                     // Set email for imported student
                     student.email = 'indulanglibrary@gmail.com';
+
                     // Create Firebase account
                     await this.authService.createStudentAccount(student.lrn);
+
                     // Add student to Firestore
                     await this.studentService.addStudent(student);
+
                     importedCount++;
+                    console.log(`✅ Successfully imported: ${student.name}`);
+
+                    // Add delay between each import to avoid rate limiting (1 second)
+                    if (i < importedStudents.length - 1) {
+                        await new Promise((resolve) => setTimeout(resolve, 1000));
+                    }
                 } catch (error: any) {
-                    // Skip if account already exists or other error
-                    if (error.message.includes('already exists')) {
+                    // Skip if account already exists
+                    if (error.message.includes('already exists') || error.message.includes('email-already-in-use')) {
                         skippedCount++;
                     } else {
-                        console.error(`Error importing student ${student.lrn}:`, error);
-                        skippedCount++;
+                        errorCount++;
                     }
+                } finally {
+                    this.importProgress++;
                 }
             }
+
+            this.importInProgress = false;
 
             this.messageService.add({
                 severity: importedCount > 0 ? 'success' : 'warn',
                 summary: 'Import Complete',
-                detail: `Imported: ${importedCount}, Skipped: ${skippedCount} from ${fileName}`
+                detail: `✅ Imported: ${importedCount} | ⚠️ Skipped: ${skippedCount} | ❌ Errors: ${errorCount} from ${fileName}`,
+                life: 8000
             });
 
             this.loadStudents();
         } catch (error) {
-            this.messageService.add({ severity: 'error', summary: 'Import Error', detail: 'Failed to import students' });
+            this.importInProgress = false;
+            this.messageService.add({
+                severity: 'error',
+                summary: 'Import Error',
+                detail: 'Failed to import students. Please try again.'
+            });
         }
     }
 }
