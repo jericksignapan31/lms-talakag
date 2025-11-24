@@ -14,6 +14,7 @@ import { InputIconModule } from 'primeng/inputicon';
 import { IconFieldModule } from 'primeng/iconfield';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TagModule } from 'primeng/tag';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { FirestoreBorrowingService, Borrowing, Penalty } from '../../services/firestore-borrowing.service';
 import { FirestoreStudentService, Student } from '../../services/firestore-student.service';
 import { FirestoreTeacherService, Teacher } from '../../services/firestore-teacher.service';
@@ -24,7 +25,7 @@ import { AuthService } from '../auth/auth.service';
 @Component({
     selector: 'app-borrowing',
     standalone: true,
-    imports: [CommonModule, TableModule, FormsModule, ButtonModule, RippleModule, ToastModule, ToolbarModule, InputTextModule, SelectModule, DialogModule, TagModule, InputIconModule, IconFieldModule, ConfirmDialogModule],
+    imports: [CommonModule, TableModule, FormsModule, ButtonModule, RippleModule, ToastModule, ToolbarModule, InputTextModule, SelectModule, DialogModule, TagModule, InputIconModule, IconFieldModule, ConfirmDialogModule, MultiSelectModule],
     template: `
         <p-toast />
         <p-toolbar styleClass="mb-6">
@@ -216,16 +217,42 @@ import { AuthService } from '../auth/auth.service';
                     }
 
                     <div>
-                        <label for="book" class="block font-bold mb-2">Book *</label>
-                        <p-select [(ngModel)]="selectedBookAccessionNumber" [options]="books()" optionLabel="title" optionValue="accessionNumber" placeholder="Select Book" filter fluid id="book" />
-                        @if (submitted && !selectedBookAccessionNumber) {
-                            <small class="text-red-500">Book is required.</small>
+                        <label for="books" class="block font-bold mb-2">Select Books to Borrow *</label>
+                        <p-multiselect
+                            [(ngModel)]="selectedBooksAccessionNumbers"
+                            [options]="getAvailableBooksWithStatus()"
+                            optionLabel="title"
+                            optionValue="accessionNumber"
+                            optionDisabled="unavailable"
+                            placeholder="Click to select available books..."
+                            [filter]="true"
+                            [maxSelectedLabels]="3"
+                            fluid
+                            id="books"
+                            [showToggleAll]="true"
+                            display="chip"
+                            [showHeader]="true"
+                            appendTo="body"
+                            styleClass="w-full"
+                        />
+                        <small class="text-gray-500">Grayed out books are already borrowed</small>
+                        @if (submitted && (!selectedBooksAccessionNumbers || selectedBooksAccessionNumbers.length === 0)) {
+                            <small class="text-red-500">At least one book is required.</small>
                         }
                     </div>
 
                     <div>
                         <label for="borrowDate" class="block font-bold mb-2">Borrow Date</label>
                         <input type="date" pInputText id="borrowDate" [(ngModel)]="borrowDate" fluid />
+                    </div>
+
+                    <div>
+                        <label for="dueDate" class="block font-bold mb-2">Return Date (Due Date) *</label>
+                        <input type="date" pInputText id="dueDate" [(ngModel)]="customDueDate" [min]="borrowDate" fluid />
+                        <small class="text-gray-500">Default: 14 days from borrow date. You can customize this date.</small>
+                        @if (submitted && !customDueDate) {
+                            <small class="text-red-500">Return date is required.</small>
+                        }
                     </div>
                 </div>
             </ng-template>
@@ -265,8 +292,9 @@ export class BorrowingComponent implements OnInit {
     ];
 
     selectedBorrowerLRN: string | null = null;
-    selectedBookAccessionNumber: string | null = null;
+    selectedBooksAccessionNumbers: string[] = [];
     borrowDate: string = '';
+    customDueDate: string = '';
 
     @ViewChild('borrowingTable') borrowingTable!: Table;
     @ViewChild('penaltyTable') penaltyTable!: Table;
@@ -395,6 +423,11 @@ export class BorrowingComponent implements OnInit {
     openBorrowDialog() {
         this.borrowDate = new Date().toISOString().split('T')[0];
 
+        // Set default due date to 14 days from today
+        const defaultDueDate = new Date();
+        defaultDueDate.setDate(defaultDueDate.getDate() + 14);
+        this.customDueDate = defaultDueDate.toISOString().split('T')[0];
+
         // For admin: show borrower type selection
         // For teacher/student: auto-set borrower type to current user
         if (this.isAdmin()) {
@@ -411,7 +444,7 @@ export class BorrowingComponent implements OnInit {
             }
         }
 
-        this.selectedBookAccessionNumber = null;
+        this.selectedBooksAccessionNumbers = [];
         this.submitted = false;
         this.borrowDialog = true;
     }
@@ -421,10 +454,29 @@ export class BorrowingComponent implements OnInit {
         this.submitted = false;
     }
 
+    /**
+     * Get books list with availability status
+     * Marks unavailable books (already borrowed/overdue) as disabled
+     */
+    getAvailableBooksWithStatus() {
+        return this.books().map((book) => ({
+            ...book,
+            unavailable: this.borrowings().some((borrowing) => borrowing.bookAccessionNumber === book.accessionNumber && (borrowing.status === 'borrowed' || borrowing.status === 'overdue'))
+        }));
+    }
+
+    /**
+     * Check if a book is unavailable (already borrowed or overdue)
+     * Used to disable books in the multiselect dropdown
+     */
+    isBookUnavailable(book: Book): boolean {
+        return this.borrowings().some((borrowing) => borrowing.bookAccessionNumber === book.accessionNumber && (borrowing.status === 'borrowed' || borrowing.status === 'overdue'));
+    }
+
     async saveBorrowing() {
         this.submitted = true;
 
-        if (!this.borrowerType || !this.selectedBorrowerLRN || !this.selectedBookAccessionNumber) {
+        if (!this.borrowerType || !this.selectedBorrowerLRN || !this.selectedBooksAccessionNumbers || this.selectedBooksAccessionNumbers.length === 0 || !this.customDueDate) {
             return;
         }
 
@@ -458,65 +510,76 @@ export class BorrowingComponent implements OnInit {
                 borrowerLRN = teacher.teacherID;
             }
 
-            const book = this.books().find((b) => b.accessionNumber === this.selectedBookAccessionNumber);
+            // Track which books couldn't be borrowed
+            const unavailableBooks: string[] = [];
+            const successfulBorrowings: Borrowing[] = [];
 
-            if (!book) {
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Error',
-                    detail: 'Book not found'
-                });
-                return;
+            // Process each selected book
+            for (const accessionNumber of this.selectedBooksAccessionNumbers) {
+                const book = this.books().find((b) => b.accessionNumber === accessionNumber);
+
+                if (!book) {
+                    unavailableBooks.push(accessionNumber);
+                    continue;
+                }
+
+                // CHECK IF BOOK IS ALREADY BORROWED
+                const isBookAlreadyBorrowed = this.borrowings().some((borrowing) => borrowing.bookAccessionNumber === accessionNumber && (borrowing.status === 'borrowed' || borrowing.status === 'overdue'));
+
+                if (isBookAlreadyBorrowed) {
+                    const currentBorrowing = this.borrowings().find((borrowing) => borrowing.bookAccessionNumber === accessionNumber && (borrowing.status === 'borrowed' || borrowing.status === 'overdue'));
+                    unavailableBooks.push(`${book.title} (borrowed by ${currentBorrowing?.studentName})`);
+                    continue;
+                }
+
+                // Create borrowing record
+                const borrowing: Borrowing = {
+                    studentLRN: borrowerLRN,
+                    studentName: `${borrowerName} (${this.borrowerType === 'student' ? '👤 Student' : '👨‍🏫 Teacher'})`,
+                    borrowerType: this.borrowerType as 'student' | 'teacher',
+                    bookAccessionNumber: book.accessionNumber,
+                    bookTitle: book.title,
+                    bookISBN: book.isbn,
+                    borrowDate: this.borrowDate,
+                    dueDate: this.customDueDate,
+                    status: 'borrowed'
+                };
+
+                await this.borrowingService.borrowBook(borrowing);
+                successfulBorrowings.push(borrowing);
             }
 
-            // CHECK IF BOOK IS ALREADY BORROWED
-            const isBookAlreadyBorrowed = this.borrowings().some((borrowing) => borrowing.bookAccessionNumber === this.selectedBookAccessionNumber && (borrowing.status === 'borrowed' || borrowing.status === 'overdue'));
-
-            if (isBookAlreadyBorrowed) {
-                // Find the borrowing record to show who has it
-                const currentBorrowing = this.borrowings().find((borrowing) => borrowing.bookAccessionNumber === this.selectedBookAccessionNumber && (borrowing.status === 'borrowed' || borrowing.status === 'overdue'));
-
+            // Show results
+            if (successfulBorrowings.length > 0) {
                 this.messageService.add({
-                    severity: 'error',
-                    summary: '❌ Book Already Borrowed',
-                    detail: `This book is currently borrowed by: ${currentBorrowing?.studentName} (Due: ${currentBorrowing?.dueDate})`,
-                    sticky: true
+                    severity: 'success',
+                    summary: '✅ Books Borrowed',
+                    detail: `Successfully borrowed ${successfulBorrowings.length} book(s). Due date: ${this.customDueDate}`,
+                    life: 5000
                 });
-                return;
             }
 
-            // Calculate due date (2 weeks from borrow date)
-            const borrowDateObj = new Date(this.borrowDate);
-            const dueDate = new Date(borrowDateObj.getTime() + 14 * 24 * 60 * 60 * 1000);
+            if (unavailableBooks.length > 0) {
+                this.messageService.add({
+                    severity: 'warn',
+                    summary: '⚠️ Unavailable Books',
+                    detail: `Could not borrow: ${unavailableBooks.join(', ')}`,
+                    sticky: true,
+                    life: 8000
+                });
+            }
 
-            const borrowing: Borrowing = {
-                studentLRN: borrowerLRN,
-                studentName: `${borrowerName} (${this.borrowerType === 'student' ? '👤 Student' : '👨‍🏫 Teacher'})`,
-                borrowerType: this.borrowerType as 'student' | 'teacher',
-                bookAccessionNumber: book.accessionNumber,
-                bookTitle: book.title,
-                bookISBN: book.isbn,
-                borrowDate: this.borrowDate,
-                dueDate: dueDate.toISOString().split('T')[0],
-                status: 'borrowed'
-            };
-
-            await this.borrowingService.borrowBook(borrowing);
-            this.messageService.add({
-                severity: 'success',
-                summary: 'Success',
-                detail: 'Book borrowed successfully. Due date: ' + borrowing.dueDate
-            });
-
-            await this.loadBorrowings();
-            this.hideBorrowDialog();
+            if (successfulBorrowings.length > 0) {
+                await this.loadBorrowings();
+                this.hideBorrowDialog();
+            }
         } catch (error) {
             this.messageService.add({
                 severity: 'error',
                 summary: 'Error',
-                detail: 'Failed to borrow book'
+                detail: 'Failed to borrow books'
             });
-            console.error('Error borrowing book:', error);
+            console.error('Error borrowing books:', error);
         }
     }
 
